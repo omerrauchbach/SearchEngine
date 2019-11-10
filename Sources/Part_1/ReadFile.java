@@ -27,62 +27,63 @@ public class ReadFile {
     // reads all the files inside the corpus directory
     private void readInsideAllFiles() {
 
-        File directory = new File(pathDir + "/corpus");
-        File[] allFiles = directory.listFiles();
-        if (allFiles != null) {
-            for (File file : allFiles) {
+        File rootDirectory = new File(pathDir + "/corpus");
+        File[] allDirectorys = rootDirectory.listFiles();
+        if (allDirectorys != null) {
+            for (File file : allDirectorys) {
                 File[] current = file.listFiles(); // gets the file itself, inside the corpus directory
                 if (current != null) {
                     try {
                         BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new FileInputStream(current[0])));
-                        String currLine;
-                        StringBuilder allLinesInDoc = new StringBuilder();
-                        currLine = bufferedReader.readLine();
-                        while (currLine != null) {
-                            allLinesInDoc.append(currLine);
-                            //allLinesInDoc.append(System.lineSeparator());
-                            allLinesInDoc.append("\n");
-                            currLine = bufferedReader.readLine();
-                        }
-                        String allTextInFile = allLinesInDoc.toString();
-
+                        allLinesInDoc = new StringBuilder();
+                        for ( String currLine ; (currLine = bufferedReader.readLine()) != null; )
+                            allLinesInDoc.append( currLine + System.lineSeparator() );
                         bufferedReader.close();
-                        int startOfDoc = allLinesInDoc.indexOf("<DOC>");
-                        parsingTheDoc(startOfDoc);
+                        createDoc();
                     } catch (IOException e) {
                         ///// ???
                     }
-//                }
-//        for (File document : allFiles) {
-//            if (document.isFile()) {
-//                // System.out.println(document.getName()); //////// ?????
-//            }
-//        }
+
                 }
             }
         }
     }
 
-    private void parsingTheDoc (int startInd){
+    private void createDoc(){
+        Document newDoc = new Document();
+        String newTxt = new String();
 
-        while (startInd != -1){
+
+        int startInd = allLinesInDoc.indexOf("<DOC>");
+        while (startInd != -1) {
             int endInd = allLinesInDoc.indexOf("</DOC>", startInd); //searches for "</DOC>" from starts index
-            String currDocText = allLinesInDoc.substring(startInd, endInd);
+            String currDoc = allLinesInDoc.substring(startInd, endInd);
+            //set Id
+            getDocId(currDoc);
             // gets the document's <TEXT></TEXT> tags
-            if (currDocText.contains("<TEXT>")) {
-                int startOfText = currDocText.indexOf("<TEXT>");
+            if (currDoc.contains("<TEXT>")) {
+                int startOfText = currDoc.indexOf("<TEXT>");
                 while (startOfText != -1) {
-                    int endOfText = currDocText.indexOf("</TEXT>");
-                    String docText = currDocText.substring(startOfText+6, endOfText);
-
-                    startOfText = currDocText.indexOf("<TEXT>", endOfText); //searches for the next TEXT part in doc
-
-                   // if (!docText.equals(""))
-                   //     newDoc.addDocText(docText);
-
+                    int endOfText = currDoc.indexOf("</TEXT>");
+                    String docText = currDoc.substring(startOfText + 6, endOfText);
+                    if (docText.length() > 0)
+                        newDoc.addText(docText);
+                    startOfText = currDoc.indexOf("<TEXT>", endOfText);
                 }
             }
             startInd = allLinesInDoc.indexOf("<DOC>", endInd); //continues to the next doc in file
         }
     }
+
+    private String getDocId(String doc){
+
+        int startNumTag =  doc.indexOf("<DOCNO>");
+        int endNumTag = doc.indexOf("</DOCNO>");
+        if(startNumTag == -1 || endNumTag == -1)
+            return "";
+        else
+            return (doc.substring(startNumTag+7 , endNumTag)).trim();
+    }
+
+
 }
