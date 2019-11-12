@@ -1,5 +1,7 @@
 package Part_1;
 
+import javafx.scene.control.Alert;
+
 import java.io.*;
 import java.net.URL;
 import java.net.URLConnection;
@@ -39,21 +41,24 @@ public class ReadFile {
                         for ( String currLine ; (currLine = bufferedReader.readLine()) != null; )
                             allLinesInDoc.append( currLine + System.lineSeparator() );
                         bufferedReader.close();
-                        createDoc();
+                        // add the document
+                        Parse.documentsSet.add(createDoc());
                     } catch (IOException e) {
-                        ///// ???
+                        e.printStackTrace();
                     }
 
                 }
             }
         }
+        else{
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setContentText("Error in folder path");
+            alert.show();
+        }
     }
 
-    private void createDoc(){
+    private Document createDoc(){
         Document newDoc = new Document();
-        String newTxt = new String();
-
-
         int startInd = allLinesInDoc.indexOf("<DOC>");
         while (startInd != -1) {
             int endInd = allLinesInDoc.indexOf("</DOC>", startInd); //searches for "</DOC>" from starts index
@@ -73,6 +78,8 @@ public class ReadFile {
             }
             startInd = allLinesInDoc.indexOf("<DOC>", endInd); //continues to the next doc in file
         }
+
+        return newDoc ;
     }
 
     private String getDocId(String doc){
