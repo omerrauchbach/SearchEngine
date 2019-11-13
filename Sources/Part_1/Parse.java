@@ -1,11 +1,15 @@
 package Part_1;
 
+import javafx.scene.control.Alert;
+
+import java.io.*;
 import java.util.*;
 
 public class Parse {
 
     static Queue<Document> documentsSet = new LinkedList<>();
     private HashMap<String, Integer> stopWords;
+    private HashMap<String , int[]> termDic = new HashMap<>();
 
 
     private void parseDocs(){
@@ -154,6 +158,86 @@ public class Parse {
             return "12";
         return "-1";
     }
+
+    private void setStopWords(String path){
+
+        File stopWordsFile = new File(path);
+                if (stopWordsFile != null) {
+                    try {
+                        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new FileInputStream(stopWordsFile)));
+                        StringBuilder stopWordLines = new StringBuilder();
+                        for ( String currLine ; (currLine = bufferedReader.readLine()) != null; )
+                            stopWords.put( currLine, 1 );
+                        bufferedReader.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+
+                }
+
+
+        else{
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setContentText("Error in folder path");
+            alert.show();
+        }
+    }
+
+    private void handleWords(String word){
+
+        if(word != null word.length() > 1) {
+            /// check if word is in lower letters
+            if (word.equals(word.toLowerCase())) {
+                /// word is save in the Dic
+                if(termDic.containsKey(word)){
+
+                }
+                else if(termDic.containsKey(word.toUpperCase())){
+                    //check if the ward is save in upper case
+
+
+                }
+                else{
+                    // first occur
+                }
+
+            }
+            /// check if the first char in the word is upper letter
+            else if (word.charAt(0) == word.toUpperCase().charAt(0)){
+                if(termDic.containsKey(word)){
+
+                }
+                else if(termDic.containsKey(word.toUpperCase())){
+                    //check if the ward is save in upper case
+
+
+                }
+                else{
+                    // first occur
+                }
+            }
+            ///check if the word is all in upper letter.
+            else if (word.equals(word.toUpperCase())){
+                //first occur
+                if(!termDic.containsKey(word)){
+
+                }
+                else if(termDic.containsKey(word.toLowerCase())){
+
+                }
+                else{
+                    //first occur
+                }
+
+            }
+
+
+        }
+
+
+    }
+
+
 }
 
 
