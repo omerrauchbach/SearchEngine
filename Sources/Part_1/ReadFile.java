@@ -30,23 +30,23 @@ public class ReadFile {
     private void readInsideAllFiles() {
 
         File rootDirectory = new File(pathDir + "/corpus");
-        File[] allDirectorys = rootDirectory.listFiles();
-        if (allDirectorys != null) {
-            for (File file : allDirectorys) {
+        File[] allDirectories = rootDirectory.listFiles();
+
+        if (allDirectories != null) {
+            allLinesInDoc = new StringBuilder();
+            for (File file : allDirectories) {
                 File[] current = file.listFiles(); // gets the file itself, inside the corpus directory
-                if (current != null) {
+                if (null != current) {
                     try {
-                        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new FileInputStream(current[0])));
-                        allLinesInDoc = new StringBuilder();
-                        for ( String currLine ; (currLine = bufferedReader.readLine()) != null; )
+                        BufferedReader myBufferedReader = new BufferedReader(new InputStreamReader(new FileInputStream(current[0])));
+                        for ( String currLine ; (currLine = myBufferedReader.readLine()) != null; )
                             allLinesInDoc.append( currLine + System.lineSeparator() );
-                        bufferedReader.close();
-                        // add the document
-                        Parse.documentsSet.add(createDoc());
+                        Parse.documentsSet.add(createDoc());    // adds the specific document
+                        myBufferedReader.close();
+
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
-
                 }
             }
         }
