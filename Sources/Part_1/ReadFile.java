@@ -27,9 +27,9 @@ public class ReadFile {
     }
 
     // reads all the files inside the corpus directory
-    private void readInsideAllFiles() {
+    public void readInsideAllFiles() {
 
-        File rootDirectory = new File(pathDir + "/corpus");
+        File rootDirectory = new File(pathDir + "/corpus_1");
         File[] allDirectories = rootDirectory.listFiles();
 
         if (allDirectories != null) {

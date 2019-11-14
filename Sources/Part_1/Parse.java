@@ -9,7 +9,11 @@ public class Parse {
 
     public static Queue<Document> documentsSet = new LinkedList<>();
     private HashMap<String, Integer> stopWords;
-    private HashMap<String , int[]> termDic = new HashMap<>();
+    private HashMap<String , Integer> termDic = new HashMap<>();
+    private String[] allTokens ;
+    private int index ;
+    private String[] sums = {"Dollars","million","billion","trillion","m","bn"};
+    
 
 
     public void parseDocs() {
@@ -17,94 +21,160 @@ public class Parse {
         while (!documentsSet.isEmpty()) {
             Document newDoc = documentsSet.poll();
             String text = newDoc.getText().toString();
-            String[] allTokens = text.split("(?!,[0-9])[, ?@!:;+)_(\"\\r\\n]+");
+            allTokens = text.split("(?!,[0-9])[, ?@!:;+)_(\"\\r\\n]+");
 
-            for (int i = 0; i < allTokens.length; i++) {
+            for ( index = 0; index < allTokens.length; index++) {
                 String rightToken;
-                String currToken = allTokens[i];
+                String currToken = allTokens[index];
+                if(currToken == "")
+                    continue;
+                //===================== price =========================//
+                if (isPrice(currToken)) {
+                    handlePrice(currToken);
+                    continue;
 
-                if (String.valueOf(currToken.charAt(0)).equals("$") && isNumeric(String.valueOf(currToken.charAt(currToken.length() - 1))) && allTokens[i + 1].toLowerCase().equals("million"))  // $450 million
-                    rightToken = allTokens[i].substring(1) + " M Dollars"; ///removes the $ from the beginning
-                else if ((String.valueOf(currToken.charAt(0)).equals("$") && isNumeric(String.valueOf(currToken.charAt(currToken.length() - 1))) && allTokens[i + 1].toLowerCase().equals("billion")))  // $450 billion
-                    rightToken = allTokens[i].substring(1) + "000 M Dollars";
-                else if (isNumeric(currToken) && allTokens[i + 1].equals("million") && allTokens[i + 2].toUpperCase().equals("U.S.") && allTokens[i + 3].toLowerCase().equals("dollars"))  // 320 million U.S. Dollars
+                }
+
+
+                if (String.valueOf(currToken.charAt(0)).equals("$") && isNumeric(String.valueOf(currToken.charAt(currToken.length() - 1))) && allTokens[index + 1].toLowerCase().equals("million"))  // $450 million
+                    rightToken = allTokens[index].substring(1) + " M Dollars"; ///removes the $ from the beginning
+                else if ((String.valueOf(currToken.charAt(0)).equals("$") && isNumeric(String.valueOf(currToken.charAt(currToken.length() - 1))) && allTokens[index + 1].toLowerCase().equals("billion")))  // $450 billion
+                    rightToken = allTokens[index].substring(1) + "000 M Dollars";
+                else if (isNumeric(currToken) && allTokens[index + 1].equals("million") && allTokens[index + 2].toUpperCase().equals("U.S.") && allTokens[index + 3].toLowerCase().equals("dollars"))  // 320 million U.S. Dollars
                     rightToken = currToken + " M Dollars";
-                else if (isNumeric(currToken) && allTokens[i + 1].equals("billion") && allTokens[i + 2].toUpperCase().equals("U.S.") && allTokens[i + 3].toLowerCase().equals("dollars"))  // 100 billion U.S. Dollars
+                else if (isNumeric(currToken) && allTokens[index + 1].equals("billion") && allTokens[index + 2].toUpperCase().equals("U.S.") && allTokens[index + 3].toLowerCase().equals("dollars"))  // 100 billion U.S. Dollars
                     rightToken = currToken + "000 M Dollars";
 
-                else if (String.valueOf(currToken.charAt(0)).equals("$") && isNumeric(String.valueOf(currToken.charAt(1))) && !isNumeric(allTokens[i + 1]) && lessThanMillion(currToken.substring(1))) // $450 blabla // $450,000 blabla
-                    rightToken = allTokens[i].substring(1) + "Dollars"; //removes the $ from the beginning
+                else if (String.valueOf(currToken.charAt(0)).equals("$") && isNumeric(String.valueOf(currToken.charAt(1))) && !isNumeric(allTokens[index + 1]) && lessThanMillion(currToken.substring(1))) // $450 blabla // $450,000 blabla
+                    rightToken = allTokens[index].substring(1) + "Dollars"; //removes the $ from the beginning
 
 
-                else if (String.valueOf(currToken.charAt(0)).equals("$") && isNumeric(String.valueOf(currToken.charAt(1))) && !isNumeric(allTokens[i + 1]) && !lessThanMillion(currToken.substring(1)))  // $150,000,000 ==> 150 M Dollars
-                    rightToken = allTokens[i].substring(1, currToken.indexOf(",")) + " M " + "Dollars"; //until first "," !
-                else if (isNumeric(currToken) && !lessThanMillion(currToken) && allTokens[i + 1].toLowerCase().equals("dollars")) // 1,000,000 Dollars
-                    rightToken = allTokens[i].substring(0, currToken.indexOf(",")) + " M " + "Dollars";
-
-
+                else if (String.valueOf(currToken.charAt(0)).equals("$") && isNumeric(String.valueOf(currToken.charAt(1))) && !isNumeric(allTokens[index + 1]) && !lessThanMillion(currToken.substring(1)))  // $150,000,000 ==> 150 M Dollars
+                    rightToken = allTokens[index].substring(1, currToken.indexOf(",")) + " M " + "Dollars"; //until first "," !
+                else if (isNumeric(currToken) && !lessThanMillion(currToken) && allTokens[index + 1].toLowerCase().equals("dollars")) // 1,000,000 Dollars
+                    rightToken = allTokens[index].substring(0, currToken.indexOf(",")) + " M " + "Dollars";
                 else if (currToken.contains("-")) { // word-word // word-word-word // num-word // word-num //
                     // BETWEEN NUMBERSSSS ????????????????????????????????????????????????????????????????????????/
                     //????????????????
                     rightToken = currToken;
                 }
                 // DDAATTEEESSSSSS
-                else if (isNumeric(allTokens[i]) && isDate(allTokens[i + 1]) && allTokens[i].length() == 2) //14 May
-                    rightToken = turnMonthToNumber(allTokens[i + 1]) + "-" + allTokens[i]; //05-14
-                else if (isDate(allTokens[i]) && isNumeric(allTokens[i + 1]) && allTokens[i + 1].length() == 2) //JUN 4
-                    rightToken = turnMonthToNumber(allTokens[i]) + "-" + allTokens[i + 1]; //06-04
-                else if (isDate(allTokens[i]) && isNumeric(allTokens[i + 1]) && allTokens[i + 1].length() == 4) //JUN 1994
-                    rightToken = allTokens[i + 1] + "-" + turnMonthToNumber(allTokens[i]); //1994-06
-
+                else if (isNumeric(allTokens[index]) && isDate(allTokens[index + 1]) && allTokens[index].length() == 2) //14 May
+                    rightToken = turnMonthToNumber(allTokens[index + 1]) + "-" + allTokens[index]; //05-14
+                else if (isDate(allTokens[index]) && isNumeric(allTokens[index + 1]) && allTokens[index + 1].length() == 2) //JUN 4
+                    rightToken = turnMonthToNumber(allTokens[index]) + "-" + allTokens[index + 1]; //06-04
+                else if (isDate(allTokens[index]) && isNumeric(allTokens[index + 1]) && allTokens[index + 1].length() == 4) //JUN 1994
+                    rightToken = allTokens[index + 1] + "-" + turnMonthToNumber(allTokens[index]); //1994-06
                 else if (isNumeric(currToken)) {
-                    if (isThousand(currToken) && !isNumeric(allTokens[i + 1])) //only 100,123 (K)
-                        rightToken = allTokens[i].substring(0, currToken.indexOf(",")) + "." + allTokens[i].substring(currToken.indexOf(",") + 1) + "K";
-                    else if (isMillion(currToken) && !isNumeric(allTokens[i + 1])) // only 100,123,333 (M)
-                        rightToken = allTokens[i].substring(0, currToken.indexOf(",")) + "." + allTokens[i].substring(currToken.indexOf(",") + 1, currToken.indexOf(",") + 4) + "M";
-                    else if (isBillion(currToken) && !isNumeric(allTokens[i + 1])) // only 100,123,333,000 (B)
-                        rightToken = allTokens[i].substring(0, currToken.indexOf(",")) + "." + allTokens[i].substring(currToken.indexOf(",") + 1, currToken.indexOf(",") + 4) + "B";
+                    if (isThousand(currToken) && !isNumeric(allTokens[index + 1])) //only 100,123 (K)
+                        rightToken = allTokens[index].substring(0, currToken.indexOf(",")) + "." + allTokens[index].substring(currToken.indexOf(",") + 1) + "K";
+                    else if (isMillion(currToken) && !isNumeric(allTokens[index + 1])) // only 100,123,333 (M)
+                        rightToken = allTokens[index].substring(0, currToken.indexOf(",")) + "." + allTokens[index].substring(currToken.indexOf(",") + 1, currToken.indexOf(",") + 4) + "M";
+                    else if (isBillion(currToken) && !isNumeric(allTokens[index + 1])) // only 100,123,333,000 (B)
+                        rightToken = allTokens[index].substring(0, currToken.indexOf(",")) + "." + allTokens[index].substring(currToken.indexOf(",") + 1, currToken.indexOf(",") + 4) + "B";
 
-                    else if (allTokens[i + 1].toLowerCase().equals("thousand"))
+                    else if (allTokens[index + 1].toLowerCase().equals("thousand"))
                         rightToken = currToken + "K";
-                    else if (allTokens[i + 1].toLowerCase().equals("million"))
+                    else if (allTokens[index + 1].toLowerCase().equals("million"))
                         rightToken = currToken + "M";
-                    else if (allTokens[i + 1].toLowerCase().equals("billion"))
+                    else if (allTokens[index + 1].toLowerCase().equals("billion"))
                         rightToken = currToken + "B";
 
-                    else if (allTokens[i + 1].equals("percent") || allTokens[i + 1].equals("percentage"))
-                        rightToken = allTokens[i] + "%";
+                    else if (allTokens[index + 1].equals("percent") || allTokens[index + 1].equals("percentage"))
+                        rightToken = allTokens[index] + "%";
 
-                    else if (isFraction(allTokens[i + 1]) && allTokens[i + 2].toLowerCase().equals("dollars")) // 22 3/4 Dollars
-                        rightToken = allTokens[i] + allTokens[i + 1] + "Dollars";
-                    else if (isFraction(allTokens[i + 1])) // FRACTIONNNNN ???
-                        rightToken = allTokens[i] + allTokens[i + 1]; //as is. 25 3/4
-                    else if (allTokens[i + 1].toLowerCase().equals("dollars"))
-                        rightToken = allTokens[i] + "Dollars";
+                    else if (isFraction(allTokens[index + 1]) && allTokens[index + 2].toLowerCase().equals("dollars")) // 22 3/4 Dollars
+                        rightToken = allTokens[index] + allTokens[index + 1] + "Dollars";
+                    else if (isFraction(allTokens[index + 1])) // FRACTIONNNNN ???
+                        rightToken = allTokens[index] + allTokens[index + 1]; //as is. 25 3/4
+                    else if (allTokens[index + 1].toLowerCase().equals("dollars"))
+                        rightToken = allTokens[index] + "Dollars";
                 }
                 // FRACTION ESRONIIII
-                else if (allTokens[i].contains(".") && allTokens[i].substring(0, allTokens[i].indexOf(".")).length() > 3 && allTokens[i].substring(0, allTokens[i].indexOf(".")).length() < 7) { // 1023.48 // less/equal than 3 stays as is. 102.2 ,,, 10.873. GREATER THAN 6 IS ??????
-                    //String tempToken = allTokens[i].substring(0, allTokens[i+1].indexOf(".")); //only 1023
+                else if (allTokens[index].contains(".") && allTokens[index].substring(0, allTokens[index].indexOf(".")).length() > 3 && allTokens[index].substring(0, allTokens[index].indexOf(".")).length() < 7) { // 1023.48 // less/equal than 3 stays as is. 102.2 ,,, 10.873. GREATER THAN 6 IS ??????
+                    //String tempToken = allTokens[index].substring(0, allTokens[index+1].indexOf(".")); //only 1023
                     //if (tempToken.length() > 6) //1023.4999 ==> 1.023
-                    int tempNum = (Integer.parseInt(allTokens[i]) / 100); // SHOULD BE 1.02348
+                    int tempNum = (Integer.parseInt(allTokens[index]) / 100); // SHOULD BE 1.02348
                     String temp = Integer.toString(tempNum);
                     rightToken = temp.substring(temp.indexOf(".") + 1, temp.indexOf(".") + 4) + "K"; // 1.023K // only 3 DIGITS !
                 } else if (isNumeric(String.valueOf(currToken.charAt(0))) && String.valueOf(currToken.charAt(currToken.length() - 1)).equals("%")) //632%
                     rightToken = currToken; //already includes the "%" sign
 
-                else if (isNumeric(String.valueOf(currToken.charAt(0))) && String.valueOf(currToken.charAt(currToken.length() - 1)).equals("m") && allTokens[i + 2].toLowerCase().equals("dollars")) // 20.6m Dollars
+                else if (isNumeric(String.valueOf(currToken.charAt(0))) && String.valueOf(currToken.charAt(currToken.length() - 1)).equals("m") && allTokens[index + 2].toLowerCase().equals("dollars")) // 20.6m Dollars
                     rightToken = currToken.substring(0, currToken.length() - 1) + " M Dollars"; //without the m itself in the token.
-                else if (isNumeric(String.valueOf(currToken.charAt(0))) && String.valueOf(currToken.charAt(currToken.length() - 2)).equals("b") && String.valueOf(currToken.charAt(currToken.length() - 1)).equals("n") && allTokens[i + 1].toLowerCase().equals("dollars")) // 100bn Dollars
+                else if (isNumeric(String.valueOf(currToken.charAt(0))) && String.valueOf(currToken.charAt(currToken.length() - 2)).equals("b") && String.valueOf(currToken.charAt(currToken.length() - 1)).equals("n") && allTokens[index + 1].toLowerCase().equals("dollars")) // 100bn Dollars
                     rightToken = currToken.substring(0, currToken.length() - 2) + "000 M Dollars";
 
                 else {
-                    rightToken = allTokens[i];
+                    rightToken = allTokens[index];
                 }
             }
         }
     }
+    /*
+        Price Dollars
+    ii. $price
+    iii. $price million
+    iv. $price billion
+    v. Price m Dollars
+    vi. Price bn Dollars
+    vii. Price billion U.S. dollars
+    viii. Price million U.S. dollars
+    ix. Price trillion U.S. dollars
+
+     */
+
+    private String numericToPrice(String num ,String sum,String franction ,boolean sign, boolean Dollars , boolean US ){
+        String price = num.replace("," , "");
+        if(sign)
+            price = price.substring(1);
+        if(lessThanMillion(price)){
+            if(sign) {
+                price = (price.substring(1)) + " " + franction + "Dollars";
+
+            }else if(Dollars){
+                price = price+" "+franction+" Dollars";
+            }else{
+                price = price;
+            }
+
+        }else{
+            ///greater then M
+            if(sign)
+              price = (price.substring(1));
+
+        }
+
+        return "";
+
+    }
+
+    private boolean equalToSum(String word){
+        for(String sum : sums ){
+            if(word.equals(word))
+                return true;
+        }
+        return false;
+    }
+
+    private boolean isPrice(String price){
+
+        if(price.charAt(0) == '$' && isNumeric(price.substring(1)))
+            return true;
+        if(index < allTokens.length && isNumeric(price)){
+            String word = allTokens[index+1];
+            if(equalToSum(word))
+                return true;
+        }
+
+        return false;
+    }
+
 
     private boolean isNumeric (String docToken){ //checks if the token is a number
         try {
-            Double.parseDouble(docToken);
+
+            Double.parseDouble(docToken.replace(",",""));
             return true;
         } catch(NumberFormatException e){
             return false;
@@ -252,6 +322,57 @@ public class Parse {
                     //first occur
                 }
             }
+        }
+    }
+
+    private void handlePrice(String currToken ){
+        String price = "";
+        boolean sign =(currToken.charAt(0) == '$');
+        String[] priceTerms = new String[4];
+        int priceTermIndex = 0;
+        for(int i = index ; i <allTokens.length &&i<index+4 ; i++ ){
+            priceTerms[priceTermIndex] = allTokens[i];
+            priceTermIndex++;
+        }
+        for(String priceTerm : priceTerms){
+            if(priceTerm == null)
+                priceTerm = "";
+        }
+
+        if(equalToSum(priceTerms[1])){
+            if(priceTerms[1].equals("Dollars")){
+                price = numericToPrice(priceTerms[0],priceTerms[1],"", sign, true , false);
+                index= index+2;
+            }else if(priceTerms[1].equals("million") || priceTerms[1].equals("billion")){
+                if(priceTerms[2].equals("U.S.") && priceTerms[3].equals("dollars")) {
+                    price = numericToPrice(priceTerms[0], priceTerms[1],"",  sign, true, true);
+                    index= index+4;
+                }else {
+                    price = numericToPrice(priceTerms[0], priceTerms[1],"",  sign, false, false);
+                    index= index +2;
+                }
+            } else if (priceTerms[1].equals("m") || priceTerms[1].equals("bn")) {
+                if(priceTerms[2].equals("Dollars")) {
+                    price = numericToPrice(priceTerms[0], priceTerms[1],"",  sign, true, false);
+                    index= index +3;
+                }else {
+                    price = numericToPrice(priceTerms[0], priceTerms[1],"",  sign, false, false);
+                    index++;
+                }
+            }else if(priceTerms[2].equals("U.S.") && priceTerms[3].equals("dollars")) {
+                //trillion
+                price = numericToPrice(priceTerms[0], priceTerms[1],"",  sign, true, true);
+                index = index + 4;
+            }else if(isFraction(priceTerms[1]) && priceTerms[2].equals("Dollars")){
+                price = numericToPrice(priceTerms[0],"",priceTerms[1],  sign, true , false);
+                index= index + 3;
+            }else{
+                price = numericToPrice(priceTerms[0],"","",  sign, false , false);
+                index++;
+            }
+        }else{
+            price = numericToPrice(priceTerms[0],"","",  sign, false , false);
+            index++;
         }
     }
 }
