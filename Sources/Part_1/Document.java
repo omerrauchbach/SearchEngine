@@ -1,13 +1,21 @@
 package Part_1;
 
+import java.util.HashMap;
+
 public class Document {
 
     private String id;
     private StringBuilder docText = new StringBuilder();
     private int tfMax;
+    private HashMap<String, int[]> termDic = new HashMap<>();
 
     public Document(){
 
+    }
+
+
+    public int uniqueTerm(){
+        return termDic.size();
     }
 
     public String getId() {
