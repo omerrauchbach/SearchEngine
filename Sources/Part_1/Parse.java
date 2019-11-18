@@ -39,6 +39,7 @@ public class Parse {
                         handleDate(currToken,allTokens[index+1]);
                     else
                         handleDate(allTokens[index+1] , currToken);
+                    /////////////////jkjkjlkjljlk
                 }
                 else if(isParcent(currToken)){
                     handlePercent(currToken);
@@ -273,6 +274,7 @@ public class Parse {
     private void setStopWords(String path){
 
         File stopWordsFile = new File(path);
+
                 if (stopWordsFile != null) {
                     try {
                         BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new FileInputStream(stopWordsFile)));
