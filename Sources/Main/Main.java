@@ -12,6 +12,18 @@ public class Main {
 
 
     public static void main(String[] args) {
+
+        try {
+
+            Integer.parseInt("10.6");
+        }
+        catch (NumberFormatException e){
+            System.out.println("Error number");
+        }
+    }
+
+
+    private void test_1(){
         ReadFile rf = new ReadFile("C:\\Users\\omer\\Desktop");
         HashMap<String, Integer> termCounter = new HashMap<>();
         rf.readInsideAllFiles();
@@ -33,7 +45,9 @@ public class Main {
             System.out.println(key+","+value);
 
         }
+    }
 
+    private void test_2(){
 
     }
 }
@@ -118,4 +132,37 @@ public class Main {
  *
  *                 }
  *
+ */
+
+/**
+ *
+ * if (String.valueOf(currToken.charAt(0)).equals("$") && isNumeric(String.valueOf(currToken.charAt(currToken.length() - 1))) && allTokens[index + 1].toLowerCase().equals("million"))  // $450 million
+ *                     rightToken = allTokens[index].substring(1) + " M Dollars"; ///removes the $ from the beginning
+ *                 else if ((String.valueOf(currToken.charAt(0)).equals("$") && isNumeric(String.valueOf(currToken.charAt(currToken.length() - 1))) && allTokens[index + 1].toLowerCase().equals("billion")))  // $450 billion
+ *                     rightToken = allTokens[index].substring(1) + "000 M Dollars";
+ *                 else if (isNumeric(currToken) && allTokens[index + 1].equals("million") && allTokens[index + 2].toUpperCase().equals("U.S.") && allTokens[index + 3].toLowerCase().equals("dollars"))  // 320 million U.S. Dollars
+ *                     rightToken = currToken + " M Dollars";
+ *                 else if (isNumeric(currToken) && allTokens[index + 1].equals("billion") && allTokens[index + 2].toUpperCase().equals("U.S.") && allTokens[index + 3].toLowerCase().equals("dollars"))  // 100 billion U.S. Dollars
+ *                     rightToken = currToken + "000 M Dollars";
+ *
+ *                 else if (String.valueOf(currToken.charAt(0)).equals("$") && isNumeric(String.valueOf(currToken.charAt(1))) && !isNumeric(allTokens[index + 1]) && lessThanMillion(currToken.substring(1))) // $450 blabla // $450,000 blabla
+ *                     rightToken = allTokens[index].substring(1) + "Dollars"; //removes the $ from the beginning
+ *
+ *
+ *                 else if (String.valueOf(currToken.charAt(0)).equals("$") && isNumeric(String.valueOf(currToken.charAt(1))) && !isNumeric(allTokens[index + 1]) && !lessThanMillion(currToken.substring(1)))  // $150,000,000 ==> 150 M Dollars
+ *                     rightToken = allTokens[index].substring(1, currToken.indexOf(",")) + " M " + "Dollars"; //until first "," !
+ *                 else if (isNumeric(currToken) && !lessThanMillion(currToken) && allTokens[index + 1].toLowerCase().equals("dollars")) // 1,000,000 Dollars
+ *                     rightToken = allTokens[index].substring(0, currToken.indexOf(",")) + " M " + "Dollars";
+ *                 else if (currToken.contains("-")) { // word-word // word-word-word // num-word // word-num //
+ *                     // BETWEEN NUMBERSSSS ????????????????????????????????????????????????????????????????????????/
+ *                     //????????????????
+ *                     rightToken = currToken;
+ *                 }
+ *                 // DDAATTEEESSSSSS
+ *                 else if (isNumeric(allTokens[index]) && isDate(allTokens[index + 1]) && allTokens[index].length() == 2) //14 May
+ *                     rightToken = turnMonthToNumber(allTokens[index + 1]) + "-" + allTokens[index]; //05-14
+ *                 else if (isDate(allTokens[index]) && isNumeric(allTokens[index + 1]) && allTokens[index + 1].length() == 2) //JUN 4
+ *                     rightToken = turnMonthToNumber(allTokens[index]) + "-" + allTokens[index + 1]; //06-04
+ *                 else if (isDate(allTokens[index]) && isNumeric(allTokens[index + 1]) && allTokens[index + 1].length() == 4) //JUN 1994
+ *                     rightToken = allTokens[index + 1] + "-" + turnMonthToNumber(allTokens[index]); //1994-06
  */

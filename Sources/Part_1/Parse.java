@@ -13,6 +13,7 @@ public class Parse {
     private String[] allTokens ;
     private int index ;
     private String[] sums = {"Dollars","million","billion","trillion","m","bn"};
+    private String[] months = {"jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"};
     
 
 
@@ -21,7 +22,7 @@ public class Parse {
         while (!documentsSet.isEmpty()) {
             Document newDoc = documentsSet.poll();
             String text = newDoc.getText().toString();
-            allTokens = text.split("(?!,[0-9])[, ?@!:;+)_(\"\\r\\n]+");
+            allTokens = text.split(" (?!,[0-9])[, ?@!:;+)_(\"\\r\\n]+");
 
             for ( index = 0; index < allTokens.length; index++) {
                 String rightToken;
@@ -32,45 +33,26 @@ public class Parse {
                 if (isPrice(currToken)) {
                     handlePrice(currToken);
                     continue;
-
+                }
+                else if(isDate(currToken)){
+                    if(isNumericDate(currToken))
+                        handleDate(currToken,allTokens[index+1]);
+                    else
+                        handleDate(allTokens[index+1] , currToken);
+                }
+                else if(isParcent(currToken)){
+                    handlePercent(currToken);
                 }
 
 
-                if (String.valueOf(currToken.charAt(0)).equals("$") && isNumeric(String.valueOf(currToken.charAt(currToken.length() - 1))) && allTokens[index + 1].toLowerCase().equals("million"))  // $450 million
-                    rightToken = allTokens[index].substring(1) + " M Dollars"; ///removes the $ from the beginning
-                else if ((String.valueOf(currToken.charAt(0)).equals("$") && isNumeric(String.valueOf(currToken.charAt(currToken.length() - 1))) && allTokens[index + 1].toLowerCase().equals("billion")))  // $450 billion
-                    rightToken = allTokens[index].substring(1) + "000 M Dollars";
-                else if (isNumeric(currToken) && allTokens[index + 1].equals("million") && allTokens[index + 2].toUpperCase().equals("U.S.") && allTokens[index + 3].toLowerCase().equals("dollars"))  // 320 million U.S. Dollars
-                    rightToken = currToken + " M Dollars";
-                else if (isNumeric(currToken) && allTokens[index + 1].equals("billion") && allTokens[index + 2].toUpperCase().equals("U.S.") && allTokens[index + 3].toLowerCase().equals("dollars"))  // 100 billion U.S. Dollars
-                    rightToken = currToken + "000 M Dollars";
-
-                else if (String.valueOf(currToken.charAt(0)).equals("$") && isNumeric(String.valueOf(currToken.charAt(1))) && !isNumeric(allTokens[index + 1]) && lessThanMillion(currToken.substring(1))) // $450 blabla // $450,000 blabla
-                    rightToken = allTokens[index].substring(1) + "Dollars"; //removes the $ from the beginning
 
 
-                else if (String.valueOf(currToken.charAt(0)).equals("$") && isNumeric(String.valueOf(currToken.charAt(1))) && !isNumeric(allTokens[index + 1]) && !lessThanMillion(currToken.substring(1)))  // $150,000,000 ==> 150 M Dollars
-                    rightToken = allTokens[index].substring(1, currToken.indexOf(",")) + " M " + "Dollars"; //until first "," !
-                else if (isNumeric(currToken) && !lessThanMillion(currToken) && allTokens[index + 1].toLowerCase().equals("dollars")) // 1,000,000 Dollars
-                    rightToken = allTokens[index].substring(0, currToken.indexOf(",")) + " M " + "Dollars";
-                else if (currToken.contains("-")) { // word-word // word-word-word // num-word // word-num //
-                    // BETWEEN NUMBERSSSS ????????????????????????????????????????????????????????????????????????/
-                    //????????????????
-                    rightToken = currToken;
-                }
-                // DDAATTEEESSSSSS
-                else if (isNumeric(allTokens[index]) && isDate(allTokens[index + 1]) && allTokens[index].length() == 2) //14 May
-                    rightToken = turnMonthToNumber(allTokens[index + 1]) + "-" + allTokens[index]; //05-14
-                else if (isDate(allTokens[index]) && isNumeric(allTokens[index + 1]) && allTokens[index + 1].length() == 2) //JUN 4
-                    rightToken = turnMonthToNumber(allTokens[index]) + "-" + allTokens[index + 1]; //06-04
-                else if (isDate(allTokens[index]) && isNumeric(allTokens[index + 1]) && allTokens[index + 1].length() == 4) //JUN 1994
-                    rightToken = allTokens[index + 1] + "-" + turnMonthToNumber(allTokens[index]); //1994-06
-                else if (isNumeric(currToken)) {
-                    if (isThousand(currToken) && !isNumeric(allTokens[index + 1])) //only 100,123 (K)
+                else if (isNumericDouble(currToken)) {
+                    if (isThousand(currToken) && !isNumericDouble(allTokens[index + 1])) //only 100,123 (K)
                         rightToken = allTokens[index].substring(0, currToken.indexOf(",")) + "." + allTokens[index].substring(currToken.indexOf(",") + 1) + "K";
-                    else if (isMillion(currToken) && !isNumeric(allTokens[index + 1])) // only 100,123,333 (M)
+                    else if (isMillion(currToken) && !isNumericDouble(allTokens[index + 1])) // only 100,123,333 (M)
                         rightToken = allTokens[index].substring(0, currToken.indexOf(",")) + "." + allTokens[index].substring(currToken.indexOf(",") + 1, currToken.indexOf(",") + 4) + "M";
-                    else if (isBillion(currToken) && !isNumeric(allTokens[index + 1])) // only 100,123,333,000 (B)
+                    else if (isBillion(currToken) && !isNumericDouble(allTokens[index + 1])) // only 100,123,333,000 (B)
                         rightToken = allTokens[index].substring(0, currToken.indexOf(",")) + "." + allTokens[index].substring(currToken.indexOf(",") + 1, currToken.indexOf(",") + 4) + "B";
 
                     else if (allTokens[index + 1].toLowerCase().equals("thousand"))
@@ -97,12 +79,12 @@ public class Parse {
                     int tempNum = (Integer.parseInt(allTokens[index]) / 100); // SHOULD BE 1.02348
                     String temp = Integer.toString(tempNum);
                     rightToken = temp.substring(temp.indexOf(".") + 1, temp.indexOf(".") + 4) + "K"; // 1.023K // only 3 DIGITS !
-                } else if (isNumeric(String.valueOf(currToken.charAt(0))) && String.valueOf(currToken.charAt(currToken.length() - 1)).equals("%")) //632%
+                } else if (isNumericDouble(String.valueOf(currToken.charAt(0))) && String.valueOf(currToken.charAt(currToken.length() - 1)).equals("%")) //632%
                     rightToken = currToken; //already includes the "%" sign
 
-                else if (isNumeric(String.valueOf(currToken.charAt(0))) && String.valueOf(currToken.charAt(currToken.length() - 1)).equals("m") && allTokens[index + 2].toLowerCase().equals("dollars")) // 20.6m Dollars
+                else if (isNumericDouble(String.valueOf(currToken.charAt(0))) && String.valueOf(currToken.charAt(currToken.length() - 1)).equals("m") && allTokens[index + 2].toLowerCase().equals("dollars")) // 20.6m Dollars
                     rightToken = currToken.substring(0, currToken.length() - 1) + " M Dollars"; //without the m itself in the token.
-                else if (isNumeric(String.valueOf(currToken.charAt(0))) && String.valueOf(currToken.charAt(currToken.length() - 2)).equals("b") && String.valueOf(currToken.charAt(currToken.length() - 1)).equals("n") && allTokens[index + 1].toLowerCase().equals("dollars")) // 100bn Dollars
+                else if (isNumericDouble(String.valueOf(currToken.charAt(0))) && String.valueOf(currToken.charAt(currToken.length() - 2)).equals("b") && String.valueOf(currToken.charAt(currToken.length() - 1)).equals("n") && allTokens[index + 1].toLowerCase().equals("dollars")) // 100bn Dollars
                     rightToken = currToken.substring(0, currToken.length() - 2) + "000 M Dollars";
 
                 else {
@@ -111,41 +93,34 @@ public class Parse {
             }
         }
     }
-    /*
-        Price Dollars
-    ii. $price
-    iii. $price million
-    iv. $price billion
-    v. Price m Dollars
-    vi. Price bn Dollars
-    vii. Price billion U.S. dollars
-    viii. Price million U.S. dollars
-    ix. Price trillion U.S. dollars
 
-     */
 
-    private String numericToPrice(String num ,String sum,String franction ,boolean sign, boolean Dollars , boolean US ){
+    private void insertTermDic(String term){
+
+    }
+
+    private String numericToPrice(String num ,String sum,String fraction ,boolean sign, boolean Dollars , boolean US ){
         String price = num.replace("," , "");
         if(sign)
             price = price.substring(1);
         if(lessThanMillion(price)){
-            if(sign) {
-                price = (price.substring(1)) + " " + franction + "Dollars";
-
-            }else if(Dollars){
-                price = price+" "+franction+" Dollars";
-            }else{
-                price = price;
-            }
-
+            price = price+" "+fraction+" Dollars";
         }else{
             ///greater then M
-            if(sign)
-              price = (price.substring(1));
+
 
         }
 
-        return "";
+        return "" ;
+
+    }
+
+    private String hundleGreaterThenM(String num, String sum,boolean sign){
+
+        if(sign)
+            num =num.substring(1);
+
+        return " ";
 
     }
 
@@ -159,22 +134,31 @@ public class Parse {
 
     private boolean isPrice(String price){
 
-        if(price.charAt(0) == '$' && isNumeric(price.substring(1)))
+        if(price.charAt(0) == '$' && isNumericDouble(price.substring(1)))
             return true;
-        if(index < allTokens.length && isNumeric(price)){
+        if(index < allTokens.length && isNumericDouble(price)){
             String word = allTokens[index+1];
-            if(equalToSum(word))
-                return true;
+                if(equalToSum(word))
+                    return true;
         }
 
         return false;
     }
 
-
-    private boolean isNumeric (String docToken){ //checks if the token is a number
+    private boolean isNumericDouble (String docToken){ //checks if the token is a number
         try {
 
             Double.parseDouble(docToken.replace(",",""));
+            return true;
+        } catch(NumberFormatException e){
+            return false;
+        }
+    }
+
+    private boolean isNumericInt(String docToken){
+        try {
+
+            Integer.parseInt(docToken.replace(",",""));
             return true;
         } catch(NumberFormatException e){
             return false;
@@ -211,16 +195,50 @@ public class Parse {
         return false;
     }
 
-    private boolean isDate (String docToken){ //checks if the token is a month (date)
-        String[] months = {"jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"};
-        boolean found = false;
-        for (String month : months) {
-            if (docToken.toLowerCase().contains(month)) {
-                found = true;
-                break;
-            }
+    private boolean isMonths(String token){
+        for (String month : months)
+            if (token.toLowerCase().contains(month))
+                return true;
+        return false;
+
+    }
+
+    private boolean isNumericDate(String numToken){
+
+        try {
+            int num = Integer.parseInt(numToken) ;
+            if(numToken.length() == 2)
+                if(num < 13 && num > 0)
+                    return true;
+            else if(numToken.length() == 4)
+                return true;
+        } catch(NumberFormatException e){
+            return false;
         }
-        return found;
+        return false;
+    }
+
+    private boolean isDate (String docToken){ //checks if the token is a month (date)
+
+        if(index < allTokens.length){
+            if((isNumericDate(docToken) && isMonths(allTokens[index+1])) || (isNumericDate(allTokens[index+1]) && isMonths(docToken)))
+                return true;
+            else
+                return false;
+        }
+        else
+            return false;
+    }
+
+    private boolean isParcent(String term){
+
+        if(index < allTokens.length)
+            if(isNumericDouble(term) && allTokens[index+1] == "%")
+                return true;
+            else if(isNumericDouble(term) && (allTokens[index+1].equals("percent") || allTokens[index+1].equals("percentage")) )
+                return true;
+
+        return false;
     }
 
     public static String turnMonthToNumber (String docMonth){ //turns the month name to number
@@ -276,8 +294,33 @@ public class Parse {
         }
     }
 
+    private boolean stopWord(String word){
+        if(stopWords != null && stopWords.size()>0){
+            for(String stopWord : stopWords.keySet()){
+                if(stopWord.equals(word) || stopWord.equals(word.toLowerCase()) || stopWord.equals(word.toUpperCase()))
+                    return true;
+            }
+        }
+        return false;
+    }
+
+    private String startEndWord(String word){
+
+        if(word.equals("U.S."))
+            return word;
+        ////first char
+        if(word.charAt(0) == '.')
+            word = word.substring(1);
+        if(word.charAt(word.length()-1) == '.')
+            word = word.substring(0,word.length()-1);
+
+        return word;
+    }
+
     private void handleWords(String word){
 
+
+        word = startEndWord(word);
         if(word != null && word.length() > 1) {
             /// check if word is in lower letters
             if (word.equals(word.toLowerCase())) {
@@ -286,33 +329,21 @@ public class Parse {
 
                 }
                 else if(termDic.containsKey(word.toUpperCase())){
-                    //check if the word is save in upper case
+                    //check if the word is save as upper case
 
 
                 }
                 else{
-                    // first occur
-                }
 
-            }
-            /// check if the first char in the word is upper letter
-            else if (word.charAt(0) == word.toUpperCase().charAt(0)){
-                if(termDic.containsKey(word)){
+                    //first occur
 
                 }
-                else if(termDic.containsKey(word.toUpperCase())){
-                    //check if the ward is save in upper case
 
-
-                }
-                else{
-                    // first occur
-                }
             }
             ///check if the word is all in upper letter.
             else if (word.equals(word.toUpperCase())){
-                //first occur
-                if(!termDic.containsKey(word)){
+
+                if(termDic.containsKey(word)){
 
                 }
                 else if(termDic.containsKey(word.toLowerCase())){
@@ -322,6 +353,18 @@ public class Parse {
                     //first occur
                 }
             }
+            /// check if the first char in the word is upper letter
+            else if (word.charAt(0) == word.toUpperCase().charAt(0)){
+                if(termDic.containsKey(word.toUpperCase())){
+
+                }
+                else{
+                    // first occur
+                }
+            }else{
+                word = word.toLowerCase();
+            }
+
         }
     }
 
@@ -375,6 +418,25 @@ public class Parse {
             index++;
         }
     }
+
+    private void handleDate(String num , String month){
+
+        String numMonth = turnMonthToNumber(month);
+
+        insertTermDic(numMonth+"-"+num);
+        index++ ;
+
+
+    }
+
+    private void handlePercent(String num) {
+
+        insertTermDic(num + "%");
+        index = index +2;
+
+    }
+
+
 }
 
 
