@@ -41,7 +41,7 @@ public class Parse {
                         handleDate(allTokens[index+1] , currToken);
                     /////////////////jkjkjlkjljlk
                 }
-                else if(isParcent(currToken)){
+                else if(isPercent(currToken)){
                     handlePercent(currToken);
                 }
 
@@ -66,12 +66,6 @@ public class Parse {
                     else if (allTokens[index + 1].equals("percent") || allTokens[index + 1].equals("percentage"))
                         rightToken = allTokens[index] + "%";
 
-                    else if (isFraction(allTokens[index + 1]) && allTokens[index + 2].toLowerCase().equals("dollars")) // 22 3/4 Dollars
-                        rightToken = allTokens[index] + allTokens[index + 1] + "Dollars";
-                    else if (isFraction(allTokens[index + 1])) // FRACTIONNNNN ???
-                        rightToken = allTokens[index] + allTokens[index + 1]; //as is. 25 3/4
-                    else if (allTokens[index + 1].toLowerCase().equals("dollars"))
-                        rightToken = allTokens[index] + "Dollars";
                 }
                 // FRACTION ESRONIIII
                 else if (allTokens[index].contains(".") && allTokens[index].substring(0, allTokens[index].indexOf(".")).length() > 3 && allTokens[index].substring(0, allTokens[index].indexOf(".")).length() < 7) { // 1023.48 // less/equal than 3 stays as is. 102.2 ,,, 10.873. GREATER THAN 6 IS ??????
@@ -80,13 +74,7 @@ public class Parse {
                     int tempNum = (Integer.parseInt(allTokens[index]) / 100); // SHOULD BE 1.02348
                     String temp = Integer.toString(tempNum);
                     rightToken = temp.substring(temp.indexOf(".") + 1, temp.indexOf(".") + 4) + "K"; // 1.023K // only 3 DIGITS !
-                } else if (isNumericDouble(String.valueOf(currToken.charAt(0))) && String.valueOf(currToken.charAt(currToken.length() - 1)).equals("%")) //632%
-                    rightToken = currToken; //already includes the "%" sign
-
-                else if (isNumericDouble(String.valueOf(currToken.charAt(0))) && String.valueOf(currToken.charAt(currToken.length() - 1)).equals("m") && allTokens[index + 2].toLowerCase().equals("dollars")) // 20.6m Dollars
-                    rightToken = currToken.substring(0, currToken.length() - 1) + " M Dollars"; //without the m itself in the token.
-                else if (isNumericDouble(String.valueOf(currToken.charAt(0))) && String.valueOf(currToken.charAt(currToken.length() - 2)).equals("b") && String.valueOf(currToken.charAt(currToken.length() - 1)).equals("n") && allTokens[index + 1].toLowerCase().equals("dollars")) // 100bn Dollars
-                    rightToken = currToken.substring(0, currToken.length() - 2) + "000 M Dollars";
+                }
 
                 else {
                     rightToken = allTokens[index];
@@ -95,26 +83,30 @@ public class Parse {
         }
     }
 
-
     private void insertTermDic(String term){
 
     }
 
-    private String numericToPrice(String num ,String sum,String fraction ,boolean sign, boolean Dollars , boolean US ){
+    public String numericToPrice(String num ,String sum,String fraction ,boolean sign, boolean Dollars , boolean US ){
         String price = num.replace("," , "");
         if(sign)
             price = price.substring(1);
         if(lessThanMillion(price)){
-            price = price+" "+fraction+" Dollars";
-        }else{
-            ///greater then M
-
-
+            price = num+" "+fraction+" Dollars";
+        }else{  ///greater then M
+            if ((sum.equals("million") && US && Dollars) || (sum.equals("m") && Dollars) || (sign && sum.equals("million")))
+                price = price + " M Dollars";
+            else if ((sum.equals("billion") && US && Dollars)  || (sum.equals("bn") && Dollars) || (sign && sum.equals("billion")))
+                price = price + "000 M Dollars"; //adds 3 zeroes. B ==> M.
+            else if (sum.equals("trillion") && US && Dollars)
+                price = price + "000000 M Dollars"; //adds 6 ??? zeroes. T ==> M.
+            else if ((Dollars && !sign && !US) || (sign && !US && !Dollars))  // 1,000,000 Dollars // $450,000,000
+                price = Integer.parseInt(price)/1000000 + " M Dollars"; //1 M Dollars
         }
-
+        System.out.println(price);
         return "" ;
-
     }
+
 
     private String hundleGreaterThenM(String num, String sum,boolean sign){
 
@@ -133,7 +125,7 @@ public class Parse {
         return false;
     }
 
-    private boolean isPrice(String price){
+    public boolean isPrice(String price){
 
         if(price.charAt(0) == '$' && isNumericDouble(price.substring(1)))
             return true;
@@ -231,7 +223,7 @@ public class Parse {
             return false;
     }
 
-    private boolean isParcent(String term){
+    private boolean isPercent(String term){
 
         if(index < allTokens.length)
             if(isNumericDouble(term) && allTokens[index+1] == "%")
@@ -370,12 +362,12 @@ public class Parse {
         }
     }
 
-    private void handlePrice(String currToken ){
+    public void handlePrice(String currToken ){
         String price = "";
         boolean sign =(currToken.charAt(0) == '$');
         String[] priceTerms = new String[4];
         int priceTermIndex = 0;
-        for(int i = index ; i <allTokens.length &&i<index+4 ; i++ ){
+        for(int i = index ; i <allTokens.length && i<index+4 ; i++ ){
             priceTerms[priceTermIndex] = allTokens[i];
             priceTermIndex++;
         }
