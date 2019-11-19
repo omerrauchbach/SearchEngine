@@ -44,11 +44,7 @@ public class Parse {
                 else if(isPercent(currToken)){
                     handlePercent(currToken);
                 }
-
-
-
-
-                else if (isNumericDouble(currToken)) {
+                else if (isNumericInt(currToken)) {
                     if (isThousand(currToken) && !isNumericDouble(allTokens[index + 1])) //only 100,123 (K)
                         rightToken = allTokens[index].substring(0, currToken.indexOf(",")) + "." + allTokens[index].substring(currToken.indexOf(",") + 1) + "K";
                     else if (isMillion(currToken) && !isNumericDouble(allTokens[index + 1])) // only 100,123,333 (M)
@@ -62,9 +58,10 @@ public class Parse {
                         rightToken = currToken + "M";
                     else if (allTokens[index + 1].toLowerCase().equals("billion"))
                         rightToken = currToken + "B";
-
+                    /*
                     else if (allTokens[index + 1].equals("percent") || allTokens[index + 1].equals("percentage"))
                         rightToken = allTokens[index] + "%";
+                     */
 
                 }
                 // FRACTION ESRONIIII
@@ -428,6 +425,24 @@ public class Parse {
         insertTermDic(num + "%");
         index = index +2;
 
+    }
+
+    private void handleNumInt(String intNum){
+
+
+        if (isThousand(intNum) && !isNumericDouble(allTokens[index + 1])) //only 100,123 (K)
+            insertTermDic(allTokens[index].substring(0, intNum.indexOf(",")) + "." + allTokens[index].substring(intNum.indexOf(",") + 1) + "K");
+        else if (isMillion(intNum) && !isNumericDouble(allTokens[index + 1])) // only 100,123,333 (M)
+            insertTermDic(allTokens[index].substring(0, intNum.indexOf(",")) + "." + allTokens[index].substring(intNum.indexOf(",") + 1, intNum.indexOf(",") + 4) + "M");
+        else if (isBillion(intNum) && !isNumericDouble(allTokens[index + 1])) // only 100,123,333,000 (B)
+            insertTermDic(allTokens[index].substring(0, intNum.indexOf(",")) + "." + allTokens[index].substring(intNum.indexOf(",") + 1, intNum.indexOf(",") + 4) + "B");
+
+        else if (allTokens[index + 1].toLowerCase().equals("thousand"))
+            insertTermDic(intNum + "K";
+        else if (allTokens[index + 1].toLowerCase().equals("million"))
+            insertTermDic( intNum + "M";
+        else if (allTokens[index + 1].toLowerCase().equals("billion"))
+            insertTermDic(intNum + "B";
     }
 
 
