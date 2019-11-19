@@ -15,14 +15,14 @@ public class Main {
     public static void main(String[] args) {
 
          try {
-
-            Integer.parseInt("10.6");
-        }
+            String test = "012345";
+             System.out.println(test.substring(0,10)) ;
+         }
         catch (NumberFormatException e){
             System.out.println("Error number");
         }
 
-        test_1();
+
 
     }
 
