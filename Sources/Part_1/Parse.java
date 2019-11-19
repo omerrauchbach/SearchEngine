@@ -10,7 +10,7 @@ public class Parse {
     public static Queue<Document> documentsSet = new LinkedList<>();
     private HashMap<String, Integer> stopWords;
     private HashMap<String , Integer> termDic = new HashMap<>();
-    private String[] allTokens ;
+    public static String[] allTokens ;
     private int index ;
     private String[] sums = {"Dollars","million","billion","trillion","m","bn"};
     private String[] months = {"jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"};
@@ -88,11 +88,15 @@ public class Parse {
     }
 
     public String numericToPrice(String num ,String sum,String fraction ,boolean sign, boolean Dollars , boolean US ){
-        String price = num.replace("," , "");
+        //String price = num.replace("," , "");
+        String price = num;
         if(sign)
             price = price.substring(1);
-        if(lessThanMillion(price)){
-            price = num+" "+fraction+" Dollars";
+        if(lessThanMillion(price) && !sum.equals("million") && !sum.equals("billion") && !sum.equals("m") && !sum.equals("bn")){
+            if(!fraction.equals(""))
+                price = price+" "+fraction+" Dollars";
+            else
+                price = price+" Dollars";
         }else{  ///greater then M
             if ((sum.equals("million") && US && Dollars) || (sum.equals("m") && Dollars) || (sign && sum.equals("million")))
                 price = price + " M Dollars";
@@ -100,8 +104,10 @@ public class Parse {
                 price = price + "000 M Dollars"; //adds 3 zeroes. B ==> M.
             else if (sum.equals("trillion") && US && Dollars)
                 price = price + "000000 M Dollars"; //adds 6 ??? zeroes. T ==> M.
-            else if ((Dollars && !sign && !US) || (sign && !US && !Dollars))  // 1,000,000 Dollars // $450,000,000
-                price = Integer.parseInt(price)/1000000 + " M Dollars"; //1 M Dollars
+            else if ((Dollars && !sign && !US) || (sign && !US && !Dollars)) { // 1,000,000 Dollars // $450,000,000
+                price = price.replace("," , "");
+                price = Integer.parseInt(price) / 1000000 + " M Dollars"; //1 M Dollars
+            }
         }
         System.out.println(price);
         return "" ;
@@ -119,7 +125,7 @@ public class Parse {
 
     private boolean equalToSum(String word){
         for(String sum : sums ){
-            if(word.equals(word))
+            if(sum.equals(word))
                 return true;
         }
         return false;
@@ -165,7 +171,8 @@ public class Parse {
     }
 
     private boolean lessThanMillion (String numToken){
-        if (Integer.parseInt(numToken) < 1000000)
+        String notEsrony = numToken.substring(0, numToken.indexOf("."));s
+        if (Integer.parseInt(numToken.replace(",", "")) < 1000000)
             return true;
         return false;
     }
@@ -368,6 +375,13 @@ public class Parse {
         String[] priceTerms = new String[4];
         int priceTermIndex = 0;
         for(int i = index ; i <allTokens.length && i<index+4 ; i++ ){
+            if(allTokens[i].equals("")) {
+                index++;
+                continue;
+
+            }
+
+
             priceTerms[priceTermIndex] = allTokens[i];
             priceTermIndex++;
         }
@@ -384,7 +398,7 @@ public class Parse {
                 if(priceTerms[2].equals("U.S.") && priceTerms[3].equals("dollars")) {
                     price = numericToPrice(priceTerms[0], priceTerms[1],"",  sign, true, true);
                     index= index+4;
-                }else {
+                }else { // $100 million
                     price = numericToPrice(priceTerms[0], priceTerms[1],"",  sign, false, false);
                     index= index +2;
                 }

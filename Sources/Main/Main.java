@@ -33,8 +33,8 @@ public class Main {
         rf.readInsideAllFiles();
         for (Document d : Parse.documentsSet) {
             String text = d.getText().toString();
-            String[] allTokens = text.split( "(?!,[0-9])[, ?@!:;+)_(\"\\r\\n]+");
-            for(String term : allTokens )
+            Parse.allTokens = text.split( "(?!,[0-9])[, ?@!:;+)_(\"\\r\\n]+");
+            for(String term : Parse.allTokens )
                 if (!term.equals(""))
                   parse.handlePrice(term);
 /*
