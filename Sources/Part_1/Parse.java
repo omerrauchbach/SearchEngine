@@ -9,7 +9,7 @@ public class Parse {
 
     public static Queue<Document> documentsSet = new LinkedList<>();
     private HashMap<String, Integer> stopWords;
-    private HashMap<String , Integer> termDic = new HashMap<>();
+    private HashMap<String , int[]> termDic = new HashMap<>();
     public static String[] allTokens ;
     private int index ;
     private String[] sums = {"Dollars","million","billion","trillion","m","bn"};
@@ -44,51 +44,47 @@ public class Parse {
                 else if(isPercent(currToken)){
                     handlePercent(currToken);
                 }
-                else if (isNumericInt(currToken)) {
-                    if (isThousand(currToken) && !isNumericDouble(allTokens[index + 1])) //only 100,123 (K)
-                        rightToken = allTokens[index].substring(0, currToken.indexOf(",")) + "." + allTokens[index].substring(currToken.indexOf(",") + 1) + "K";
-                    else if (isMillion(currToken) && !isNumericDouble(allTokens[index + 1])) // only 100,123,333 (M)
-                        rightToken = allTokens[index].substring(0, currToken.indexOf(",")) + "." + allTokens[index].substring(currToken.indexOf(",") + 1, currToken.indexOf(",") + 4) + "M";
-                    else if (isBillion(currToken) && !isNumericDouble(allTokens[index + 1])) // only 100,123,333,000 (B)
-                        rightToken = allTokens[index].substring(0, currToken.indexOf(",")) + "." + allTokens[index].substring(currToken.indexOf(",") + 1, currToken.indexOf(",") + 4) + "B";
-
-                    else if (allTokens[index + 1].toLowerCase().equals("thousand"))
-                        rightToken = currToken + "K";
-                    else if (allTokens[index + 1].toLowerCase().equals("million"))
-                        rightToken = currToken + "M";
-                    else if (allTokens[index + 1].toLowerCase().equals("billion"))
-                        rightToken = currToken + "B";
-                    /*
-                    else if (allTokens[index + 1].equals("percent") || allTokens[index + 1].equals("percentage"))
-                        rightToken = allTokens[index] + "%";
-                     */
-
-                }
-                // FRACTION ESRONIIII
-                else if (allTokens[index].contains(".") && allTokens[index].substring(0, allTokens[index].indexOf(".")).length() > 3 && allTokens[index].substring(0, allTokens[index].indexOf(".")).length() < 7) { // 1023.48 // less/equal than 3 stays as is. 102.2 ,,, 10.873. GREATER THAN 6 IS ??????
-                    //String tempToken = allTokens[index].substring(0, allTokens[index+1].indexOf(".")); //only 1023
-                    //if (tempToken.length() > 6) //1023.4999 ==> 1.023
-                    int tempNum = (Integer.parseInt(allTokens[index]) / 100); // SHOULD BE 1.02348
-                    String temp = Integer.toString(tempNum);
-                    rightToken = temp.substring(temp.indexOf(".") + 1, temp.indexOf(".") + 4) + "K"; // 1.023K // only 3 DIGITS !
+                else if (isNumericDouble(currToken)) {
+                    handleNum(currToken);
                 }
 
-                else {
-                    rightToken = allTokens[index];
+                else if(isBetween(currToken)) {
+                    insertTermDic(currToken+allTokens[index+1]+allTokens[index+2]+allTokens[index+3]);
+                    index = index+4;
+                }else if(isLine(currToken)){
+                    handleLine(currToken);
+                }else{
+                    handleWords(currToken);
                 }
             }
         }
     }
 
     private void insertFirstOccur(String term){
-
+        if(term != null && !term.equals("")) {
+            int[] data = new int[4];
+            data[0] = 1;
+            termDic.put(term, data);
+        }
     }
 
     private void insertTermDic(String term){
+        if(term != null && !term.equals("")) {
+            int[] newData = termDic.get(term);
+            newData[0]++;
+            termDic.replace(term, newData);
+        }
 
     }
 
     private void changeUpperCaseToLowerCase(String term){
+
+        if(term != null && !term.equals("")) {
+            int[] newData = termDic.get(term.toUpperCase());
+            newData[0]++;
+            termDic.remove(term.toUpperCase());
+            termDic.put(term , newData);
+        }
 
     }
 
@@ -118,15 +114,6 @@ public class Parse {
         return "" ;
     }
 
-
-    private String hundleGreaterThenM(String num, String sum,boolean sign){
-
-        if(sign)
-            num =num.substring(1);
-
-        return " ";
-
-    }
 
     private boolean equalToSum(String word){
         for(String sum : sums ){
@@ -176,7 +163,7 @@ public class Parse {
     }
 
     private boolean lessThanMillion (String numToken){
-        String notEsrony = numToken.substring(0, numToken.indexOf("."));s
+        String notEsrony = numToken.substring(0, numToken.indexOf("."));
         if (Integer.parseInt(numToken.replace(",", "")) < 1000000)
             return true;
         return false;
@@ -220,6 +207,12 @@ public class Parse {
 
     }
 
+    private boolean isLine(String token){
+        if(token.contains("-"))
+            return true;
+        return false;
+    }
+
     /**
      *  function that get a number and remove
      *  all number after the 3 char after the "."
@@ -249,9 +242,9 @@ public class Parse {
     private String shiftLeft(String numToken ,int shift ){
 
         String ans = "";
+        int charIndex;
         if(numToken.contains(".")) {
-
-            int charIndex = numToken.charAt('.');
+            charIndex = numToken.charAt('.');
             if(charIndex >4){
                 ans = numToken.replace("." , "");
                 ans = ans.substring(0,charIndex-shift)+"."+ans.substring(charIndex-shift);
@@ -259,9 +252,14 @@ public class Parse {
             }else
                 return numToken;
         }else{
-            if(numToken.length()>3)
-                ans = numToken.substring(0,3)+"."+ans.substring(3);
-            else
+            if(numToken.length()>3) {
+                charIndex = numToken.length() - shift;
+                if(charIndex+3 > numToken.length())
+                    ans = numToken.substring(0, charIndex) + "." + ans.substring(charIndex);
+                else
+                    ans = numToken.substring(0, charIndex) + "." + ans.substring(charIndex,charIndex+3);
+                return ans;
+            }else
                 return numToken;
 
         }
@@ -303,6 +301,18 @@ public class Parse {
             else if(isNumericDouble(term) && (allTokens[index+1].equals("percent") || allTokens[index+1].equals("percentage")) )
                 return true;
 
+        return false;
+    }
+
+    private boolean isBetween(String term){
+
+        if("between" == term.toLowerCase() && ((index+3) <= allTokens.length) ){
+           if(allTokens[index+2].equals("and")){
+               boolean isNumber_1 = isNumericDouble(allTokens[index+1]);
+               boolean isNumber_2 = isNumericDouble(allTokens[index+3]);
+               return isNumber_1 && isNumber_2;
+           }
+        }
         return false;
     }
 
@@ -425,7 +435,9 @@ public class Parse {
                 if(termDic.containsKey(word.toUpperCase())){
                     insertTermDic(word.toUpperCase());
                 }
-                else{
+                else if(termDic.containsKey(word.toLowerCase())){
+                    insertFirstOccur(word.toLowerCase());
+                }else{
                     insertFirstOccur(word.toUpperCase());
                 }
             }
@@ -507,41 +519,53 @@ public class Parse {
 
     }
 
-    private void handleNumInt(String intNum){
+    private void handleNum(String intNum) {
 
         String sum = "";
-        boolean twoTerm =  index < allTokens.length ;
-        if(twoTerm){
-            if (allTokens[index + 1].toLowerCase().equals("thousand"))
+        String zero = "";
+        intNum = intNum.replace(",", "");
+        boolean twoTerm = index < allTokens.length;
+        if (twoTerm) {
+            if (allTokens[index + 1].toLowerCase().equals("thousand")) {
                 sum = "K";
-            else if (allTokens[index + 1].toLowerCase().equals("million"))
+                zero = "000";
+            } else if (allTokens[index + 1].toLowerCase().equals("million")) {
                 sum = "M";
-            else if (allTokens[index + 1].toLowerCase().equals("billion"))
+                zero = "000000";
+            } else if (allTokens[index + 1].toLowerCase().equals("billion")) {
                 sum = "B";
+                zero = "000000000";
+            }
         }
-        if(sum.equals("") && lessThenThousand(intNum)){
-            if(twoTerm && isFraction(allTokens[index+1])) {
+        if (isFraction(intNum) && !sum.equals("")) {
+            int fraction = intNum.charAt('.');
+
+            intNum = intNum.substring(0, fraction) + zero + intNum.substring(fraction);
+        }
+        if (sum.equals("") && lessThenThousand(intNum)) {
+            if (twoTerm && isFraction(allTokens[index + 1])) {
                 insertTermDic(intNum + " " + allTokens[index + 1]);
-                index = index +2;
-            }else {
+                index = index + 2;
+            } else {
                 insertTermDic(intNum);
                 index++;
             }
 
         }
         if (isThousand(intNum) || sum.equals("K")) {//only 100,123 (K)
-            String num = returnDouble(intNum.replace("," , "."));
-            insertTermDic(num+sum);
-        }else if (isMillion(intNum) || ) // only 100,123,333 (M)
-            insertTermDic(allTokens[index].substring(0, intNum.indexOf(",")) + "." + allTokens[index].substring(intNum.indexOf(",") + 1, intNum.indexOf(",") + 4) + "M");
-        else if (isBillion(intNum) && !isNumericDouble(allTokens[index + 1])) // only 100,123,333,000 (B)
-            insertTermDic(allTokens[index].substring(0, intNum.indexOf(",")) + "." + allTokens[index].substring(intNum.indexOf(",") + 1, intNum.indexOf(",") + 4) + "B");
-        else if (allTokens[index + 1].toLowerCase().equals("thousand"))
-            insertTermDic(intNum + "K");
-        else if (allTokens[index + 1].toLowerCase().equals("million"))
-            insertTermDic( intNum + "M");
-        else if (allTokens[index + 1].toLowerCase().equals("billion"))
-            insertTermDic(intNum + "B");
+            String num = shiftLeft(returnDouble(intNum), 3);
+            insertTermDic(num + sum);
+        } else if (isMillion(intNum) || sum.equals("M")) { // only 100,123,333 (M)
+            String num = shiftLeft(returnDouble(intNum), 6);
+            insertTermDic(num + sum);
+        } else if (isBillion(intNum) || sum.equals("B")){ // only 100,123,333,000 (B)
+            String num = shiftLeft(returnDouble(intNum), 9);
+            insertTermDic(num + sum);
+        }
+    }
+
+    private void handleLine(String line){
+
     }
 
 
