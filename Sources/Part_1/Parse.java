@@ -80,7 +80,15 @@ public class Parse {
         }
     }
 
+    private void insertFirstOccur(String term){
+
+    }
+
     private void insertTermDic(String term){
+
+    }
+
+    private void changeUpperCaseToLowerCase(String term){
 
     }
 
@@ -175,7 +183,8 @@ public class Parse {
     }
 
     private boolean isThousand (String numToken){
-        if (Integer.parseInt(numToken) >= 1000 && (Integer.parseInt(numToken) < 1000000))
+        String num  = numToken.replace("," , "");
+        if (Double.parseDouble(num) >= 1000 && (Double.parseDouble(num) < 1000000))
             return true;
         return false;
     }
@@ -183,6 +192,17 @@ public class Parse {
     private boolean isMillion (String numToken){
         if (Integer.parseInt(numToken) >= 1000000 && (Integer.parseInt(numToken) < 1000000000))
             return true;
+        return false;
+    }
+
+    private boolean lessThenThousand(String numToken){
+
+        try {
+            if (Double.parseDouble(numToken) < 1000)
+                return true;
+        }catch (NumberFormatException e){
+            return false;
+        }
         return false;
     }
 
@@ -197,6 +217,54 @@ public class Parse {
             if (token.toLowerCase().contains(month))
                 return true;
         return false;
+
+    }
+
+    /**
+     *  function that get a number and remove
+     *  all number after the 3 char after the "."
+     * @param numToken - number
+     * @return correct num.
+     */
+    private String returnDouble(String numToken){
+
+        if(numToken.contains(".")){
+            int charIndex = numToken.charAt('.')+4;
+            if(charIndex > numToken.length())
+                return numToken;
+            else
+                return numToken.substring(0,charIndex);
+
+        }else
+            return numToken;
+
+    }
+
+    /**
+     * function that shift the char "." number of times.
+     * @param numToken - number
+     * @param shift - the number of shift for "."
+     * @return shift number
+     */
+    private String shiftLeft(String numToken ,int shift ){
+
+        String ans = "";
+        if(numToken.contains(".")) {
+
+            int charIndex = numToken.charAt('.');
+            if(charIndex >4){
+                ans = numToken.replace("." , "");
+                ans = ans.substring(0,charIndex-shift)+"."+ans.substring(charIndex-shift);
+                return ans;
+            }else
+                return numToken;
+        }else{
+            if(numToken.length()>3)
+                ans = numToken.substring(0,3)+"."+ans.substring(3);
+            else
+                return numToken;
+
+        }
 
     }
 
@@ -324,17 +392,17 @@ public class Parse {
             if (word.equals(word.toLowerCase())) {
                 /// word is save in the Dic
                 if(termDic.containsKey(word)){
-
+                    insertTermDic(word);
                 }
                 else if(termDic.containsKey(word.toUpperCase())){
                     //check if the word is save as upper case
-
+                    changeUpperCaseToLowerCase(word);
 
                 }
                 else{
 
                     //first occur
-
+                    insertFirstOccur(word);
                 }
 
             }
@@ -342,27 +410,25 @@ public class Parse {
             else if (word.equals(word.toUpperCase())){
 
                 if(termDic.containsKey(word)){
-
+                    insertTermDic(word);
                 }
                 else if(termDic.containsKey(word.toLowerCase())){
-
+                    insertTermDic(word.toLowerCase());
                 }
                 else{
                     //first occur
+                    insertFirstOccur(word);
                 }
             }
             /// check if the first char in the word is upper letter
             else if (word.charAt(0) == word.toUpperCase().charAt(0)){
                 if(termDic.containsKey(word.toUpperCase())){
-
+                    insertTermDic(word.toUpperCase());
                 }
                 else{
-                    // first occur
+                    insertFirstOccur(word.toUpperCase());
                 }
-            }else{
-                word = word.toLowerCase();
             }
-
         }
     }
 
@@ -443,20 +509,39 @@ public class Parse {
 
     private void handleNumInt(String intNum){
 
+        String sum = "";
+        boolean twoTerm =  index < allTokens.length ;
+        if(twoTerm){
+            if (allTokens[index + 1].toLowerCase().equals("thousand"))
+                sum = "K";
+            else if (allTokens[index + 1].toLowerCase().equals("million"))
+                sum = "M";
+            else if (allTokens[index + 1].toLowerCase().equals("billion"))
+                sum = "B";
+        }
+        if(sum.equals("") && lessThenThousand(intNum)){
+            if(twoTerm && isFraction(allTokens[index+1])) {
+                insertTermDic(intNum + " " + allTokens[index + 1]);
+                index = index +2;
+            }else {
+                insertTermDic(intNum);
+                index++;
+            }
 
-        if (isThousand(intNum) && !isNumericDouble(allTokens[index + 1])) //only 100,123 (K)
-            insertTermDic(allTokens[index].substring(0, intNum.indexOf(",")) + "." + allTokens[index].substring(intNum.indexOf(",") + 1) + "K");
-        else if (isMillion(intNum) && !isNumericDouble(allTokens[index + 1])) // only 100,123,333 (M)
+        }
+        if (isThousand(intNum) || sum.equals("K")) {//only 100,123 (K)
+            String num = returnDouble(intNum.replace("," , "."));
+            insertTermDic(num+sum);
+        }else if (isMillion(intNum) || ) // only 100,123,333 (M)
             insertTermDic(allTokens[index].substring(0, intNum.indexOf(",")) + "." + allTokens[index].substring(intNum.indexOf(",") + 1, intNum.indexOf(",") + 4) + "M");
         else if (isBillion(intNum) && !isNumericDouble(allTokens[index + 1])) // only 100,123,333,000 (B)
             insertTermDic(allTokens[index].substring(0, intNum.indexOf(",")) + "." + allTokens[index].substring(intNum.indexOf(",") + 1, intNum.indexOf(",") + 4) + "B");
-
         else if (allTokens[index + 1].toLowerCase().equals("thousand"))
-            insertTermDic(intNum + "K";
+            insertTermDic(intNum + "K");
         else if (allTokens[index + 1].toLowerCase().equals("million"))
-            insertTermDic( intNum + "M";
+            insertTermDic( intNum + "M");
         else if (allTokens[index + 1].toLowerCase().equals("billion"))
-            insertTermDic(intNum + "B";
+            insertTermDic(intNum + "B");
     }
 
 
