@@ -168,8 +168,10 @@ public class Parse {
     }
 
     private boolean lessThanMillion (String numToken){
-        String notEsrony = numToken.substring(0, numToken.indexOf("."));s
-        if (Integer.parseInt(numToken.replace(",", "")) < 1000000)
+        String notEsrony = numToken;
+        if (numToken.contains("."))
+            notEsrony = numToken.substring(0, numToken.indexOf("."));
+        if (Integer.parseInt(notEsrony.replace(",", "")) < 1000000)
             return true;
         return false;
     }
@@ -387,6 +389,11 @@ public class Parse {
                 priceTerm = "";
         }
 
+        if (priceTerms[0] == null)
+            //// ????????????????????? END OF TEXTTTTT ????????????????
+
+        sign =(priceTerms[0].charAt(0) == '$');
+
         if(equalToSum(priceTerms[1])){
             if(priceTerms[1].equals("Dollars")){
                 price = numericToPrice(priceTerms[0],priceTerms[1],"", sign, true , false);
@@ -440,24 +447,24 @@ public class Parse {
         index = index +2;
 
     }
-
-    private void handleNumInt(String intNum){
-
-
-        if (isThousand(intNum) && !isNumericDouble(allTokens[index + 1])) //only 100,123 (K)
-            insertTermDic(allTokens[index].substring(0, intNum.indexOf(",")) + "." + allTokens[index].substring(intNum.indexOf(",") + 1) + "K");
-        else if (isMillion(intNum) && !isNumericDouble(allTokens[index + 1])) // only 100,123,333 (M)
-            insertTermDic(allTokens[index].substring(0, intNum.indexOf(",")) + "." + allTokens[index].substring(intNum.indexOf(",") + 1, intNum.indexOf(",") + 4) + "M");
-        else if (isBillion(intNum) && !isNumericDouble(allTokens[index + 1])) // only 100,123,333,000 (B)
-            insertTermDic(allTokens[index].substring(0, intNum.indexOf(",")) + "." + allTokens[index].substring(intNum.indexOf(",") + 1, intNum.indexOf(",") + 4) + "B");
-
-        else if (allTokens[index + 1].toLowerCase().equals("thousand"))
-            insertTermDic(intNum + "K";
-        else if (allTokens[index + 1].toLowerCase().equals("million"))
-            insertTermDic( intNum + "M";
-        else if (allTokens[index + 1].toLowerCase().equals("billion"))
-            insertTermDic(intNum + "B";
-    }
+//
+//    private void handleNumInt(String intNum){
+//
+//
+//        if (isThousand(intNum) && !isNumericDouble(allTokens[index + 1])) //only 100,123 (K)
+//            insertTermDic(allTokens[index].substring(0, intNum.indexOf(",")) + "." + allTokens[index].substring(intNum.indexOf(",") + 1) + "K");
+//        else if (isMillion(intNum) && !isNumericDouble(allTokens[index + 1])) // only 100,123,333 (M)
+//            insertTermDic(allTokens[index].substring(0, intNum.indexOf(",")) + "." + allTokens[index].substring(intNum.indexOf(",") + 1, intNum.indexOf(",") + 4) + "M");
+//        else if (isBillion(intNum) && !isNumericDouble(allTokens[index + 1])) // only 100,123,333,000 (B)
+//            insertTermDic(allTokens[index].substring(0, intNum.indexOf(",")) + "." + allTokens[index].substring(intNum.indexOf(",") + 1, intNum.indexOf(",") + 4) + "B");
+//
+//        else if (allTokens[index + 1].toLowerCase().equals("thousand"))
+//            insertTermDic(intNum + "K";
+//        else if (allTokens[index + 1].toLowerCase().equals("million"))
+//            insertTermDic( intNum + "M";
+//        else if (allTokens[index + 1].toLowerCase().equals("billion"))
+//            insertTermDic(intNum + "B";
+//    }
 
 
 }
