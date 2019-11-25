@@ -14,52 +14,25 @@ public class Main {
 
     public static void main(String[] args) {
 
-         try {
-            String test = "012345";
-             System.out.println(test.substring(0,10)) ;
-         }
-        catch (NumberFormatException e){
-            System.out.println("Error number");
-        }
-
-
-
-    }
-
-
-    private static void test_1(){
-        ReadFile rf = new ReadFile("C:\\Users\\Tali\\Desktop\\BGU\\searchEngine");
-        HashMap<String, Integer> termCounter = new HashMap<>();
+        ReadFile rf = new ReadFile("C:\\Users\\omer\\Desktop");
         rf.readInsideAllFiles();
-        for (Document d : Parse.documentsSet) {
-            String text = d.getText().toString();
-            Parse.allTokens = text.split( "(?!,[0-9])[, ?@!:;+)_(\"\\r\\n]+");
-            for(String term : Parse.allTokens )
-                if (!term.equals(""))
-                  parse.handlePrice(term);
-/*
-            if(termCounter.containsKey(term)){
-                    termCounter.replace(term, termCounter.get(term)+1);
-                }
-                else{
-                    termCounter.put(term ,1);
-                }*/
-        }
+        Parse parse_test = new Parse();
+        parse_test.start();
 
-        for(Map.Entry<String, Integer> entry : termCounter.entrySet()) {
+        for(Map.Entry<String, int[]> entry : parse_test.termDic.entrySet()) {
             String key = entry.getKey();
-            Integer value = entry.getValue();
-            System.out.println(key+","+value);
+            int[] value = entry.getValue();
+            System.out.println(key+","+value[0]);
 
         }
 
-    }
-
-    private static void test_2(){
-
-        parse.parseDocs();
 
     }
+
+
+
+
+
 }
 
 
