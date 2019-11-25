@@ -1,5 +1,7 @@
 package Part_1;
 
+
+
 import javafx.scene.control.Alert;
 
 import java.io.*;
@@ -9,32 +11,36 @@ public class Parse {
 
     public static Queue<Document> documentsSet = new LinkedList<>();
     private HashMap<String, Integer> stopWords;
-    private HashMap<String , int[]> termDic = new HashMap<>();
+    public static HashMap<String , int[]> termDic = new HashMap<>();
     public static String[] allTokens ;
     private int index ;
     private String[] sums = {"Dollars","million","billion","trillion","m","bn"};
     private String[] months = {"jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"};
     
+    public Parse(){
 
+    }
 
-    public void parseDocs() {
+    private void parseDocs() {
 
         while (!documentsSet.isEmpty()) {
             Document newDoc = documentsSet.poll();
             String text = newDoc.getText().toString();
-            allTokens = text.split(" (?!,[0-9])[, ?@!:;+)_(\"\\r\\n]+");
+            allTokens = text.split(" (?!,[0-9])[, ?@!:;+)_(\\\"\\\\r\\\\n]+");
 
             for ( index = 0; index < allTokens.length; index++) {
                 String rightToken;
-                String currToken = allTokens[index];
-                if(currToken == "")
+                String currToken = allTokens[index].trim();
+
+                System.out.println(currToken);
+                if(currToken.equals("")|| currToken.equals("\n"))
                     continue;
                 //===================== price =========================//
-                if (isPrice(currToken)) {
+                if (isDate(currToken)) {
                     handlePrice(currToken);
                     continue;
                 }
-                else if(isDate(currToken)){
+                else if(isPrice(currToken)){
                     if(isNumericDate(currToken))
                         handleDate(currToken,allTokens[index+1]);
                     else
@@ -53,8 +59,10 @@ public class Parse {
                     index = index+4;
                 }else if(isLine(currToken)){
                     handleLine(currToken);
+                    index++;
                 }else{
                     handleWords(currToken);
+                    index++;
                 }
             }
         }
@@ -88,7 +96,7 @@ public class Parse {
 
     }
 
-    public String numericToPrice(String num ,String sum,String fraction ,boolean sign, boolean Dollars , boolean US ){
+    private String numericToPrice(String num ,String sum,String fraction ,boolean sign, boolean Dollars , boolean US ){
         //String price = num.replace("," , "");
         String price = num;
         if(sign)
@@ -114,7 +122,6 @@ public class Parse {
         return "" ;
     }
 
-
     private boolean equalToSum(String word){
         for(String sum : sums ){
             if(sum.equals(word))
@@ -123,7 +130,7 @@ public class Parse {
         return false;
     }
 
-    public boolean isPrice(String price){
+    private boolean isPrice(String price){
 
         if(price.charAt(0) == '$' && isNumericDouble(price.substring(1)))
             return true;
@@ -168,10 +175,6 @@ public class Parse {
         if (numToken.contains("."))
             notEsrony = numToken.substring(0, numToken.indexOf("."));
         if (Integer.parseInt(notEsrony.replace(",", "")) < 1000000)
-          String notEsrony = numToken.substring(0, numToken.indexOf("."));
-        if (Integer.parseInt(numToken.replace(",", "")) < 1000000)
-          
-
             return true;
         return false;
     }
@@ -313,7 +316,7 @@ public class Parse {
 
     private boolean isBetween(String term){
 
-        if("between" == term.toLowerCase() && ((index+3) <= allTokens.length) ){
+        if(term.toLowerCase().equals("between") && ((index+3) <= allTokens.length) ){
            if(allTokens[index+2].equals("and")){
                boolean isNumber_1 = isNumericDouble(allTokens[index+1]);
                boolean isNumber_2 = isNumericDouble(allTokens[index+3]);
@@ -323,7 +326,7 @@ public class Parse {
         return false;
     }
 
-    public static String turnMonthToNumber (String docMonth){ //turns the month name to number
+    private static String turnMonthToNumber (String docMonth){ //turns the month name to number
 
         if (docMonth.toLowerCase().equals("jan") || docMonth.toLowerCase().equals("january"))
             return "01";
@@ -392,9 +395,9 @@ public class Parse {
         if(word.equals("U.S."))
             return word;
         ////first char
-        if(word.charAt(0) == '.')
+        if(word.charAt(0) == '.' || word.charAt(0) == ':' || word.charAt(0) == ',')
             word = word.substring(1);
-        if(word.charAt(word.length()-1) == '.')
+        if(word.charAt(word.length()-1) == '.' || word.charAt(word.length()-1) ==':' || word.charAt(word.length()-1) == ',')
             word = word.substring(0,word.length()-1);
 
         return word;
@@ -451,7 +454,7 @@ public class Parse {
         }
     }
 
-    public void handlePrice(String currToken ){
+    private void handlePrice(String currToken ){
         String price = "";
         boolean sign =(currToken.charAt(0) == '$');
         String[] priceTerms = new String[4];
@@ -532,22 +535,7 @@ public class Parse {
     }
 
 
-    private void handleNumInt(String intNum){
 
-        if (isThousand(intNum) && !isNumericDouble(allTokens[index + 1])) //only 100,123 (K)
-            insertTermDic(allTokens[index].substring(0, intNum.indexOf(",")) + "." + allTokens[index].substring(intNum.indexOf(",") + 1) + "K");
-        else if (isMillion(intNum) && !isNumericDouble(allTokens[index + 1])) // only 100,123,333 (M)
-            insertTermDic(allTokens[index].substring(0, intNum.indexOf(",")) + "." + allTokens[index].substring(intNum.indexOf(",") + 1, intNum.indexOf(",") + 4) + "M");
-        else if (isBillion(intNum) && !isNumericDouble(allTokens[index + 1])) // only 100,123,333,000 (B)
-            insertTermDic(allTokens[index].substring(0, intNum.indexOf(",")) + "." + allTokens[index].substring(intNum.indexOf(",") + 1, intNum.indexOf(",") + 4) + "B");
-
-        else if (allTokens[index + 1].toLowerCase().equals("thousand"))
-            insertTermDic(intNum + "K";
-        else if (allTokens[index + 1].toLowerCase().equals("million"))
-            insertTermDic( intNum + "M";
-        else if (allTokens[index + 1].toLowerCase().equals("billion"))
-            insertTermDic(intNum + "B";
-    }
 
 
     private void handleNum(String intNum) {
@@ -597,6 +585,17 @@ public class Parse {
 
     private void handleLine(String line){
 
+        if(termDic.containsKey(line))
+            insertTermDic(line);
+        else
+            insertFirstOccur(line);
+
+
+
+    }
+
+    public void start(){
+        parseDocs();
     }
 
 

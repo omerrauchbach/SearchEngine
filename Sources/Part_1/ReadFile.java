@@ -24,12 +24,13 @@ public class ReadFile {
      */
     public ReadFile(String pathDir) {
         this.pathDir = pathDir;
+
     }
 
     // reads all the files inside the corpus directory
     public void readInsideAllFiles() {
 
-        File rootDirectory = new File(pathDir + "/tests");
+        File rootDirectory = new File(pathDir + "\\corpus_1");
         File[] allDirectories = rootDirectory.listFiles();
 
         if (allDirectories != null) {
