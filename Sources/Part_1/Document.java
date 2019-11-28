@@ -1,6 +1,7 @@
 package Part_1;
 
 import java.util.HashMap;
+import java.util.Set;
 
 public class Document {
 
@@ -12,7 +13,6 @@ public class Document {
     public Document(){
 
     }
-
 
     public int uniqueTerm(){
         return termDic.size();
@@ -34,9 +34,7 @@ public class Document {
         this.tfMax = tfMax;
     }
 
-    public StringBuilder getText() {
-        return docText;
-    }
+    public StringBuilder getText() { return docText; }
 
     public int getTfMax() {
         return tfMax;
@@ -45,4 +43,13 @@ public class Document {
     public void addText(String text){
         docText.append( text + System.lineSeparator() );
     }
+
+    //public HashMap<String, int[]> getTermsMap() { return termDic; }
+
+    public HashMap<String, int[]> getAllTerms (){ return termDic; }
+
+    public void setTermDic (HashMap<String, int[]> tDic){
+        termDic = tDic;
+    }
+
 }

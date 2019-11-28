@@ -1,6 +1,7 @@
 package Main;
 
 
+import Part_1.Indexer;
 import Part_1.Parse;
 import Part_1.ReadFile;
 import Part_1.Document;
@@ -11,10 +12,17 @@ import java.util.Map;
 public class Main {
 
     static Parse parse = new Parse();
+    static Indexer indexer = new Indexer();
 
     public static void main(String[] args) {
 
-        ReadFile rf = new ReadFile("C:\\Users\\omer\\Desktop");
+        ReadFile rf = new ReadFile("C:\\Users\\Tali\\Desktop\\BGU\\searchEngine");
+
+        //indexer.start();
+       // indexer.add();
+       // indexer.search();
+        indexer.test();
+
         rf.readInsideAllFiles();
         Parse parse_test = new Parse();
         parse_test.start();
