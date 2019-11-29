@@ -36,10 +36,11 @@ public class Indexer {
                     termNumOfDocs = allTermsDF.get(key); //old value of # docs for term
                     allTermsDF.replace(key, termNumOfDocs, termNumOfDocs + 1); //adds one more doc to count.
                     oldAllDocs = allTermsInDocs.get(key);
-                    newAllDocs = oldAllDocs;
+                    newAllDocs = oldAllDocs; ////// ////// pointerrrr problemmmm
                     newAllDocs.add(currDocName); //adds curr doc to list of docs for this term
                     allTermsInDocs.replace(key, oldAllDocs, newAllDocs); //updates the map
                 } else {
+                    termDic.put(key, null);
                     allTermsDF.put(key, 1); //first doc...
                     Queue<String> firstDocToList = new LinkedList<>() ;
                     firstDocToList.add(currDocName);
@@ -134,32 +135,62 @@ public class Indexer {
         d1.setTermDic(tDic);
 
         StringBuilder sb2 = new StringBuilder();
-        tDic.clear();
-        tDic.put("Ima" , null);
-        tDic.put("Abba", null);
-        tDic.put("Tomer", null);
+        HashMap<String, int[]> tDic2 = new HashMap<>();
+
+        tDic2.put("Ima" , null);
+        tDic2.put("Abba", null);
+        tDic2.put("Tomer", null);
 
         d2.setId("SW396938");
         d2.setText(sb2);
         d2.setTfMax(5);
-        d2.setTermDic(tDic);
+        d2.setTermDic(tDic2);
 
         StringBuilder sb3 = new StringBuilder();
-        tDic.clear();
-        tDic.put("Tomer" , null);
-        tDic.put("Tomer", null);
-        tDic.put("Tomer", null);
-        tDic.put("Abba", null);
-        tDic.put("Tomer", null);
+        HashMap<String, int[]> tDic3 = new HashMap<>();
+
+        tDic3.put("Tomer" , null);
+        tDic3.put("Abba", null);
+        tDic3.put("Tomer", null);
 
         d3.setId("TA834655");
         d3.setText(sb3);
         d3.setTfMax(2);
-        d3.setTermDic(tDic);
+        d3.setTermDic(tDic3);
 
         docs.add(d1);
         docs.add(d2);
         docs.add(d3);
+
+        int[] test = new int[3];
+        test[0] = 1;
+        test[1] = 0;
+        test[2] = 2;
+
+        termDic.put("Abba", test);
+        termDic.put("Ima", test);
+      //  termDic.put("tomer", test);
+       // termDic.put("Tomer", test);
+
+        allTermsDF.put("Ima", 3);
+        allTermsDF.put("Abba", 4);
+       // allTermsDF.put("Tomer", 1);
+
+        Queue<String> allDocs = new LinkedList<>();
+        ((LinkedList<String>) allDocs).add(0, "d1");
+        ((LinkedList<String>) allDocs).add(1, "d2");
+        ((LinkedList<String>) allDocs).add(2, "d3");
+
+        allTermsInDocs.put("Ima", allDocs);
+        Queue<String> allDocs2 = new LinkedList<>();
+        ((LinkedList<String>) allDocs2).add(0, "d1");
+        ((LinkedList<String>) allDocs2).add(1, "d2");
+
+        ((LinkedList<String>) allDocs2).add(2, "d3");
+        ((LinkedList<String>) allDocs2).add(3, "d4");
+        allTermsInDocs.put("Abba", allDocs2);
+
+
 
         indexAll(docs);
     }
