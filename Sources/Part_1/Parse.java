@@ -25,15 +25,15 @@ public class Parse {
 
         while (!documentsSet.isEmpty()) {
             Document newDoc = documentsSet.poll();
-            String text = newDoc.getText().toString();
-            allTokens = text.split(" (?!,[0-9])[ ,?@!:;+()_(\"\\r\\n]+");
+           // String text = newDoc.getText().toString();
+            allTokens = newDoc.getText().toString().split(" (?!,[0-9])[\\s,?@!:;#+)_(]+");
 
             for ( index = 0; index < allTokens.length; index++) {
                 String rightToken;
                 String currToken = allTokens[index].trim();
 
                 System.out.println(currToken);
-                if(currToken.equals("")||  currToken.equals("\n"))
+                if(currToken.equals("")|| currToken.equals("\n"))
                     continue;
                 //===================== price =========================//
                 if (isDate(currToken)) {
