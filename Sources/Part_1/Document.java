@@ -6,12 +6,13 @@ import java.util.Set;
 public class Document {
 
     private String id;
-    private StringBuilder docText = new StringBuilder();
+    private StringBuilder  docText;
     private int tfMax;
-    private HashMap<String, int[]> termDic = new HashMap<>();
+    private HashMap<String, int[]> termDic ;
 
     public Document(){
-
+        docText = new StringBuilder();
+        termDic = new HashMap<>();
     }
 
     public int uniqueTerm(){
