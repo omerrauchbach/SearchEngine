@@ -11,11 +11,12 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
+import java.util.stream.Stream;
 
 public class Indexer {
 
     private static HashMap<String, int[]> termDic = new HashMap<>(); // 0 - #docs, 1- #showsTotal, 2- line in posting
-    private HashMap<String, int[]> ChunkTermDic = new HashMap<>(); // 0 - #docs, 1- #showsTotal, 2- line in posting
+   // private HashMap<String, int[]> ChunkTermDic = new HashMap<>(); // 0 - #docs, 1- #showsTotal, 2- line in posting
     private HashMap<String, String> ChunkTermDicDocs = new HashMap<>(); //
     private String currDocName = "";
     private Document currDoc;
@@ -24,11 +25,13 @@ public class Indexer {
     private static int indexPosting;
     private int[] termInfo;
     private int[] updateTermInfo;
+    private HashMap<String, int[]> currDicOfQueue = new HashMap<>();
+
 
 
     private void indexAll(Queue<Document> q_docs) {
 
-        indexPosting = -1;
+        indexPosting = -1; // line number in posting file
         FILE_PATH = "C:\\Users\\Tali\\IdeaProjects\\SearchEngine\\out\\dictionary.txt";
         Path path = Paths.get(FILE_PATH);
         termInfo = new int [4];
@@ -38,32 +41,62 @@ public class Indexer {
         String currTerm = "";
         String allDocsForTerm = "";
         String termToAdd = "";
-        String currListOfDocs = "";
+        String replaceTermInPosting = "";
+        String currTermInfoDocs = "";
+        String allInfoOfTermForPosting = "";
+        String allPlacesInDoc = "";
+        String docsToAdd = "";
 
         while (q_docs != null && !q_docs.isEmpty()) { //indexes all docs in the queue (CHUNK)
+            currDicOfQueue = new HashMap<>(); // a new for each chunk
             currDoc = q_docs.poll();
             currDocDic = currDoc.getAllTerms();
             currDocName = currDoc.getId();
 
             for (String key : currDocDic.keySet()) {
+
+                if (currDicOfQueue.containsKey(key)){
+
+                    updateTermInfo[0] = currDicOfQueue.get(key)[0] + 1; // adds 1 to curr # of docs
+                    updateTermInfo[1] = currDicOfQueue.get(key)[1] + currDocDic.get(key)[0]; //#shows total == adds num of appearences in specific doc. !!!
+                    updateTermInfo[2] = currDicOfQueue.get(key)[2]; //same line of old term in doc.
+                    currDicOfQueue.replace(key, updateTermInfo); //replaces values in little dic
+
+                    allPlacesInDoc  = " ?????,???????,???? "; // איךלשמור מיקומים ספציפיים בתוך המסמך ????
+                    allInfoOfTermForPosting = ChunkTermDicDocs.get(key) + "|" + currDocName + ":" + termInfo[1] + ";" + allPlacesInDoc;
+                    ChunkTermDicDocs.put(key, allInfoOfTermForPosting); // updates info for posting.
+
+                }
+                else{ //first time of this term in chunk.
+                    termInfo[0] = 1; // first doc in list
+                    termInfo[1] = currDocDic.get(key)[0]; //num of appearances in specific doc. !!!
+                    //termInfo[2] = indexPosting;
+
+                    currDicOfQueue.put(key, termInfo); //first doc in list, for posting!
+                    //indexPosting++;
+
+                    allPlacesInDoc = " ???,???????,????,?? ";
+                    allInfoOfTermForPosting = currDocName + ":" + termInfo[1] + ";" + allPlacesInDoc;
+                    ChunkTermDicDocs.put(key, allInfoOfTermForPosting); //info for posting.
+                }
+
                 //allDocsForTerm = "";
                 //allDocsForTerm = allDocsForTerm + " + currDocName + "-" + currTF; ////Abba - 1, d2-7, (times in doc)
-                //boolean exists = false;
-                if (termDic.containsKey(key) && !ChunkTermDic.containsKey(key)) { //word exists only in big dic
+                /*if (termDic.containsKey(key) && !ChunkTermDic.containsKey(key)) { //word exists only in big dic
 
                     termInfo[0] = termDic.get(key)[0] + 1; // adds 1 to curr # of docs
                     termInfo[1] = termDic.get(key)[1] + currDocDic.get(key)[0]; //#shows total == adds num of appearences in specific doc. !!!
                     termInfo[2] = indexPosting;
                     ChunkTermDic.put(key, termInfo); //adds term+info to little dic
-
+*/
                     //currListOfDocs = currDocDic;
                     //currListOfDocs = ChunkTermDicDocs.get(key); // current list
-                    termListOfDocs = indexPosting + " | " + currDocName + ", " + termInfo[0] + ", " + currDocDic.get(key)[0]; // | docId, df, tf
+                    //termListOfDocs = indexPosting + " | " + currDocName + ", " + termInfo[0] + ", " + currDocDic.get(key)[0]; // | docId, df, tf
                     //if (!ChunkTermDicDocs.containsKey(key))
-                    ChunkTermDicDocs.put(key, termListOfDocs);
+                    //ChunkTermDicDocs.put(key, termListOfDocs);
                     // else
                     //     ChunkTermDicDocs.replace(key, currListOfDocs, termListOfDocs);
-                }
+               /* }
                 else if (!termDic.containsKey(key) && ChunkTermDic.containsKey(key)) { //word exists only in little dic
 
                     updateTermInfo[0] = ChunkTermDic.get(key)[0] + 1; // adds 1 to curr # of docs
@@ -76,52 +109,53 @@ public class Indexer {
                     ChunkTermDicDocs.replace(key, currListOfDocs, termListOfDocs); ///replaces values in little dic of docs.
 
                 } else { // a new term.
-                    termInfo[0] = 1; // first doc in list
+                    *//*termInfo[0] = 1; // first doc in list
                     termInfo[1] = currDocDic.get(key)[0]; //num of appearances in specific doc. !!!
                     termInfo[2] = indexPosting;
                     currListOfDocs = indexPosting + " | " + currDocName + ", " + termInfo[0] + ", " + termInfo[1] ;
                     ChunkTermDicDocs.put(key, currListOfDocs); //first doc in list, for posting!
                     ChunkTermDic.put(key, termInfo); //adds term+info to little dic
                     //termListOfDocs = indexPosting + ", " + currDocName + ", 1, " + currDocDic.get(key)[0];
-                    //indexPosting++;
-                }
+                    //indexPosting++;*//*
+                }*/
             }
             //Q is empty, now moves to big doc:
-            for (String key : ChunkTermDic.keySet()) { //adds all curr Chunk's dic to big dic.
-                allDocsForTerm = ChunkTermDicDocs.get(key); //list of all docs
-
+            for (String key : currDicOfQueue.keySet()) { //adds all curr Chunk's dic to big dic.
+                //allDocsForTerm = ChunkTermDicDocs.get(key); //list of all docs
+                boolean exists = false;
+                String currIndexLinePosting = "";
                 if (termDic.containsKey(key)) { //word already exists in dic
 
-                    updateTermInfo[0] = ChunkTermDic.get(key)[0]; // updates # of docs
-                    updateTermInfo[1] = ChunkTermDic.get(key)[1]; // updates #shows total
-                    updateTermInfo[2] = ChunkTermDic.get(key)[2]; // already has index
-                    termDic.replace(key, termInfo, updateTermInfo); //replaces values in big dic
+                    updateTermInfo[0] = currDicOfQueue.get(key)[0] + termDic.get(key)[0]; // sums all # of docs
+                    updateTermInfo[1] = currDicOfQueue.get(key)[1] + termDic.get(key)[1]; // sums all #shows total
+                    int currIndexLine = updateTermInfo[2] = termDic.get(key)[2]; // already has index
+                    termDic.replace(key, updateTermInfo); //replaces values in big dic
+                    docsToAdd = ChunkTermDicDocs.get(key); //more docs to add to term in posting !! |doc5:tf;6,72
+                    replaceTermInPosting = "String from posting ??????" + docsToAdd;
+                    ///// לשרשר לסוף השורה בפוסטינג !!!!.............ץ///////////
+                    try (Stream<String> currLine = Files.lines(path)) {
+                        currIndexLinePosting = currLine.skip(currIndexLine-1).findFirst().get(); //directly to line.
+                    }
+                    catch (IOException ex) {
+                        // can't read the specific line.
+                    }
 
-                } else {
-                    updateTermInfo[0] = ChunkTermDic.get(key)[0]; // first doc in list
-                    updateTermInfo[1] = ChunkTermDic.get(key)[1]; //num of appearances in all docs. !!!
-                    updateTermInfo[2] = indexPosting; //new value
+                } else { //first entry of term in big dic.
+                    updateTermInfo[0] = currDicOfQueue.get(key)[0]; // # of docs
+                    updateTermInfo[1] = currDicOfQueue.get(key)[1]; //num of appearances in all docs. !!!
+                    updateTermInfo[2] = indexPosting; //new line.
                     termDic.put(key, updateTermInfo); //adds curr term to big dic
                     try {
-                        //int currTF = currDocDic.get(key)[0]; //num of appearences in specific doc. !!!!!!!!!!!
-                        termToAdd = indexPosting + ", " + termListOfDocs ;
-                        Files.write(path, docToAdd.getBytes(), StandardOpenOption.APPEND);
+                        termToAdd = ChunkTermDicDocs.get(key); //string .... // doc1:tf;1,46,89|doc5:tf;6,72
+                        //termToAdd = indexPosting + ", " + termListOfDocs ;
+                        Files.write(path, termToAdd.getBytes(), StandardOpenOption.APPEND); /// אמור להיות בדיוק בשורה שהיא האינדקס :O
+                        indexPosting++; // updates curr line in posting.
                     }catch (IOException e) {
                         //exception handling left as an exercise for the reader
                     }
-                    indexPosting++; // updates curr line in posting.
                 }
 
-
-
-
-                    String docToAdd = str + ", " + currDocName + "-" + currTF; //// d2-7, (times in doc)
-
-                    List<String> fileContent = new ArrayList<>(Files.readAllLines(path, StandardCharsets.UTF_8));
-
-
-
-
+                //////////////////////////////////////////////////////////////////////////////////// ??????????????????
                 try{
                     Scanner textScan = new Scanner(new File(FILE_PATH));
 
@@ -144,7 +178,7 @@ public class Indexer {
                             exists = true;
                         }
                     }
-                    if (!exists) //new term needs to be added
+                    if (!exists){} //new term needs to be added
 
                 } catch (IOException ex) {
                     // Report
