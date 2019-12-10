@@ -6,12 +6,12 @@ import java.util.Set;
 public class Document {
 
     private String id;
-    private StringBuilder  docText;
+    private String  docText;
     private int tfMax;
     private HashMap<String, int[]> termDic ;
 
     public Document(){
-        docText = new StringBuilder();
+
         termDic = new HashMap<>();
     }
 
@@ -27,7 +27,7 @@ public class Document {
         this.id = id;
     }
 
-    public void setText(StringBuilder text) {
+    public void setText(String text) {
         this.docText = text;
     }
 
@@ -35,14 +35,14 @@ public class Document {
         this.tfMax = tfMax;
     }
 
-    public StringBuilder getText() { return docText; }
+    public String getText() { return docText.toString(); }
 
     public int getTfMax() {
         return tfMax;
     }
 
     public void addText(String text){
-        docText.append( text + System.lineSeparator() );
+        docText = text;
     }
 
     //public HashMap<String, int[]> getTermsMap() { return termDic; }

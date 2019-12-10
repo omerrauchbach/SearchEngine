@@ -30,7 +30,7 @@ public class ReadFile {
     // reads all the files inside the corpus directory
     public void readInsideAllFiles() {
 
-        File rootDirectory = new File(pathDir + "\\tests");
+        File rootDirectory = new File(pathDir + "\\corpus_1");
         File[] allDirectories = rootDirectory.listFiles();
 
         if (allDirectories != null) {
@@ -42,8 +42,10 @@ public class ReadFile {
                         BufferedReader myBufferedReader = new BufferedReader(new InputStreamReader(new FileInputStream(current[0])));
                         for ( String currLine ; (currLine = myBufferedReader.readLine()) != null; )
                             allLinesInDoc.append( currLine + System.lineSeparator() );
-                        Parse.documentsSet.add(createDoc());    // adds the specific document
+                        createDoc();
+
                         myBufferedReader.close();
+
 
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -58,29 +60,43 @@ public class ReadFile {
         }
     }
 
-    private Document createDoc(){
-        Document newDoc = new Document();
+    private void createDoc(){
+        String docId;
+        String text;
         int startInd = allLinesInDoc.indexOf("<DOC>");
         while (startInd != -1) {
+
+            Document newDoc = new Document();
             int endInd = allLinesInDoc.indexOf("</DOC>", startInd); //searches for "</DOC>" from starts index
             String currDoc = allLinesInDoc.substring(startInd, endInd);
             //set Id
-            getDocId(currDoc);
+
+            int startNumTag =  allLinesInDoc.indexOf("<DOCNO>",startInd);
+            int endNumTag = allLinesInDoc.indexOf("</DOCNO>" ,startInd);
+            if(startNumTag == -1 || endNumTag == -1)
+                newDoc.setId("");
+            else {
+                String id = allLinesInDoc.substring(startNumTag + 7, endNumTag).trim();
+                newDoc.setId(id);
+            }
+
+
             // gets the document's <TEXT></TEXT> tags
             if (currDoc.contains("<TEXT>")) {
                 int startOfText = currDoc.indexOf("<TEXT>");
                 while (startOfText != -1) {
                     int endOfText = currDoc.indexOf("</TEXT>");
-                    String docText = currDoc.substring(startOfText + 6, endOfText);
+                    String docText = currDoc.substring(startOfText + 6, endOfText).trim();
                     if (docText.length() > 0)
                         newDoc.addText(docText);
                     startOfText = currDoc.indexOf("<TEXT>", endOfText);
                 }
             }
+            Parse.documentsSet.add(newDoc);    // adds the specific document
             startInd = allLinesInDoc.indexOf("<DOC>", endInd); //continues to the next doc in file
         }
 
-        return newDoc ;
+
     }
 
     private String getDocId(String doc){
