@@ -18,16 +18,18 @@ public class Parse {
     private String[] months = {"jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec","January",
     "February","March","April","May","June","July","August","September","October","November","December"};
     String docName = "";
-    
-    public Parse(){
-        setStopWord();
+    boolean iSstemmer ;
+    Stemmer stemmer = new Stemmer();
+    public Parse(boolean stemmer , String stopWordPath){
+
+        this.iSstemmer = stemmer;
+        setStopWord(stopWordPath);
+
     }
 
     private void parseDocs() {
         String currToken = "";
-        int counter = 0;
             while (!documentsSet.isEmpty()) {
-                counter++;
                 Document newDoc = documentsSet.poll();
                 docName=newDoc.getId();
                 if(!docName.equals("FBIS3-29"))
@@ -482,8 +484,10 @@ public class Parse {
 
     private void handleWords(String word){
 
-
-        word = startEndWord(word);
+        if(iSstemmer)
+            word = stemmer.getStermTerm(startEndWord(word));
+        else
+            word = startEndWord(word);
 
         if(word != null && word.length() > 1) {
             /// check if word is in lower letters
@@ -741,9 +745,13 @@ public class Parse {
         parseDocs();
     }
 
-    private void setStopWord(){
+    private void setStopWord(String path){
 
-        File rootDirectory = new File("Resources\\stop_words.txt");
+        File rootDirectory= null;
+        if(path == null || path.length() == 0)
+          rootDirectory = new File("Resources\\stop_words.txt");
+        else
+            rootDirectory = new File(path);
         if(rootDirectory != null) {
             try {
                 BufferedReader myBufferedReader = new BufferedReader(new InputStreamReader(new FileInputStream(rootDirectory)));

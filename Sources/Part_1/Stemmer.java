@@ -72,14 +72,27 @@ import java.io.*;
             b[i++] = ch;
         }
 
+        public String getStermTerm(String term){
+
+            i = term.length();
+            char[] new_b = new char[i];
+            for (int c = 0; c < i; c++) new_b[c] =term.charAt(c);
+            b = new_b;
+            stem();
+            return toString();
+
+        }
+
         /** Adds wLen characters to the word being stemmed contained in a portion
          * of a char[] array. This is like repeated calls of add(char ch), but
          * faster.
          */
 
         public void add(char[] w, int wLen)
-        {  if (i+wLen >= b.length)
-        {  char[] new_b = new char[i+wLen+INC];
+        {
+            if (i+wLen >= b.length)
+        {
+            char[] new_b = new char[i+wLen+INC];
             for (int c = 0; c < i; c++) new_b[c] = b[c];
             b = new_b;
         }
@@ -87,8 +100,8 @@ import java.io.*;
         }
 
         /**
-         * After a word has been stemmed, it can be retrieved by toString(),
-         * or a reference to the internal buffer can be retrieved by getResultBuffer
+             * After a word has been stemmed, it can be retrieved by toString(),
+             * or a reference to the internal buffer can be retrieved by getResultBuffer
          * and getResultLength (which is generally more efficient.)
          */
         public String toString() { return new String(b,0,i_end); }
