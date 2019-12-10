@@ -69,15 +69,25 @@ public class ReadFile {
             Document newDoc = new Document();
             int endInd = allLinesInDoc.indexOf("</DOC>", startInd); //searches for "</DOC>" from starts index
             String currDoc = allLinesInDoc.substring(startInd, endInd);
-            //set Id
 
-            int startNumTag =  allLinesInDoc.indexOf("<DOCNO>",startInd);
-            int endNumTag = allLinesInDoc.indexOf("</DOCNO>" ,startInd);
-            if(startNumTag == -1 || endNumTag == -1)
+            //set Id <DOCNO>, </DOCNO>"
+            int startIndexId =  allLinesInDoc.indexOf("<DOCNO>",startInd);
+            int endIndexId = allLinesInDoc.indexOf("</DOCNO>" ,startInd);
+            if(startIndexId == -1 || endIndexId == -1)
                 newDoc.setId("");
             else {
-                String id = allLinesInDoc.substring(startNumTag + 7, endNumTag).trim();
+                String id = allLinesInDoc.substring(startIndexId + 7, endIndexId).trim();
                 newDoc.setId(id);
+            }
+
+            //set Title <TI>,</TI>
+            int startIndexTitle =  allLinesInDoc.indexOf("<TI>",startInd);
+            int endIndexTitle = allLinesInDoc.indexOf("</TI>" ,startInd);
+            if(startIndexTitle == -1 || endIndexTitle == -1)
+                newDoc.setTitle("");
+            else {
+                String title = allLinesInDoc.substring(startIndexTitle + 7, endIndexTitle).trim();
+                newDoc.setTitle(title);
             }
 
 
@@ -88,7 +98,7 @@ public class ReadFile {
                     int endOfText = currDoc.indexOf("</TEXT>");
                     String docText = currDoc.substring(startOfText + 6, endOfText).trim();
                     if (docText.length() > 0)
-                        newDoc.addText(docText);
+                        newDoc.setText(docText);
                     startOfText = currDoc.indexOf("<TEXT>", endOfText);
                 }
             }
@@ -101,12 +111,12 @@ public class ReadFile {
 
     private String getDocId(String doc){
 
-        int startNumTag =  doc.indexOf("<DOCNO>");
-        int endNumTag = doc.indexOf("</DOCNO>");
-        if(startNumTag == -1 || endNumTag == -1)
+        int startIndexId =  doc.indexOf("<DOCNO>");
+        int endIndexId = doc.indexOf("</DOCNO>");
+        if(startIndexId == -1 || endIndexId == -1)
             return "";
         else
-            return (doc.substring(startNumTag+7 , endNumTag)).trim();
+            return (doc.substring(startIndexId+7 , endIndexId)).trim();
     }
 
 
