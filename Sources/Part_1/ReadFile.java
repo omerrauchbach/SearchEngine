@@ -30,7 +30,7 @@ public class ReadFile {
     // reads all the files inside the corpus directory
     public void readInsideAllFiles() {
 
-        File rootDirectory = new File(pathDir + "\\corpus_1");
+        File rootDirectory = new File(pathDir + "\\tests");
         File[] allDirectories = rootDirectory.listFiles();
 
         if (allDirectories != null) {

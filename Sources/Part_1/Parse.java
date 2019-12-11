@@ -72,6 +72,7 @@ public class Parse {
                     }
                 }
                 newDoc.setTermDic(termDic);
+                Indexer.currChunk.add(newDoc);
                 termDic.clear();
                 allTokens = null;
 
