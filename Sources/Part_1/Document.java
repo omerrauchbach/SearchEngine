@@ -9,7 +9,7 @@ public class Document {
     private String id;
     private String  docText;
     private int tfMax;
-    private HashMap<String, int[]> termDic ;
+    public HashMap<String, int[]> termDic ;
     private String title ;
 
     public Document(){
@@ -65,10 +65,12 @@ public class Document {
 
             if(entry.getValue()[0] > Max)
                 Max = entry.getValue()[0];
-
         }
-
         return Max;
+    }
+
+    public void clear(){
+        this.docText = null;
     }
 
 }

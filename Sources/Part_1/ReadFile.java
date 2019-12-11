@@ -16,6 +16,7 @@ public class ReadFile {
     private String pathDir;
     private StringBuilder allLinesInDoc;
     //private HashMap<String,Integer> notCities = new HashMap<>();
+    int counter = 0;
 
     /**
      * the constructor of the class
@@ -37,18 +38,21 @@ public class ReadFile {
             allLinesInDoc = new StringBuilder();
             for (File file : allDirectories) {
                 File[] current = file.listFiles(); // gets the file itself, inside the corpus directory
+                counter++;
                 if (null != current) {
-                    try {
-                        BufferedReader myBufferedReader = new BufferedReader(new InputStreamReader(new FileInputStream(current[0])));
-                        for ( String currLine ; (currLine = myBufferedReader.readLine()) != null; )
-                            allLinesInDoc.append( currLine + System.lineSeparator() );
-                        createDoc();
+                    for (File txtfile : current) {
+                        try {
+                            BufferedReader myBufferedReader = new BufferedReader(new InputStreamReader(new FileInputStream(txtfile)));
+                            for (String currLine; (currLine = myBufferedReader.readLine()) != null; )
+                                allLinesInDoc.append(currLine + System.lineSeparator());
+                            createDoc();
+                            allLinesInDoc = new StringBuilder();
+                            myBufferedReader.close();
 
-                        myBufferedReader.close();
 
-
-                    } catch (IOException e) {
-                        e.printStackTrace();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
                     }
                 }
             }
@@ -61,8 +65,9 @@ public class ReadFile {
     }
 
     private void createDoc(){
-        String docId;
+
         String text;
+        String id = "";
         int startInd = allLinesInDoc.indexOf("<DOC>");
         while (startInd != -1) {
 
@@ -71,36 +76,49 @@ public class ReadFile {
             String currDoc = allLinesInDoc.substring(startInd, endInd);
 
             //set Id <DOCNO>, </DOCNO>"
-            int startIndexId =  allLinesInDoc.indexOf("<DOCNO>",startInd);
-            int endIndexId = allLinesInDoc.indexOf("</DOCNO>" ,startInd);
+            int startIndexId =  currDoc.indexOf("<DOCNO>");
+            int endIndexId = currDoc.indexOf("</DOCNO>" );
             if(startIndexId == -1 || endIndexId == -1)
                 newDoc.setId("");
             else {
-                String id = allLinesInDoc.substring(startIndexId + 7, endIndexId).trim();
-                newDoc.setId(id);
+                id = currDoc.substring(startIndexId + 7, endIndexId).trim();
+                newDoc.setId(id+","+counter);
             }
 
             //set Title <TI>,</TI>
-            int startIndexTitle =  allLinesInDoc.indexOf("<TI>",startInd);
-            int endIndexTitle = allLinesInDoc.indexOf("</TI>" ,startInd);
+            int startIndexTitle =  currDoc.indexOf("<TI>",startInd);
+            int endIndexTitle = currDoc.indexOf("</TI>" ,startInd);
             if(startIndexTitle == -1 || endIndexTitle == -1)
                 newDoc.setTitle("");
             else {
-                String title = allLinesInDoc.substring(startIndexTitle + 7, endIndexTitle).trim();
+                String title = currDoc.substring(startIndexTitle + 7, endIndexTitle).trim();
                 newDoc.setTitle(title);
             }
 
+            if(id.equals("FBIS3-2221"))
+                System.out.println("stop!!!!");
 
             // gets the document's <TEXT></TEXT> tags
             if (currDoc.contains("<TEXT>")) {
-                int startOfText = currDoc.indexOf("<TEXT>");
-                while (startOfText != -1) {
-                    int endOfText = currDoc.indexOf("</TEXT>");
-                    String docText = currDoc.substring(startOfText + 6, endOfText).trim();
-                    if (docText.length() > 0)
-                        newDoc.setText(docText);
-                    startOfText = currDoc.indexOf("<TEXT>", endOfText);
-                }
+                int startOfText;
+                int addStart =6;
+                if (currDoc.contains("<F P=106>") || currDoc.contains("<F P=105>") ) {
+                    startOfText = currDoc.indexOf("[Text]");
+                    if(currDoc.contains("[Excerpt]")) {
+                        startOfText = currDoc.indexOf("[Excerpt]");
+                        addStart = 9;
+                    }
+                    else if(currDoc.contains("[Excerpts]")){
+                        startOfText = currDoc.indexOf("[Excerpts]");
+                        addStart = 10;
+                    }
+
+                }else
+                    startOfText = currDoc.indexOf("<TEXT>");
+                int endOfText = currDoc.indexOf("</TEXT>");
+                String docText = currDoc.substring(startOfText + addStart, endOfText).trim();
+                if (docText.length() > 0)
+                    newDoc.setText(docText);
             }
             Parse.documentsSet.add(newDoc);    // adds the specific document
             startInd = allLinesInDoc.indexOf("<DOC>", endInd); //continues to the next doc in file
