@@ -15,7 +15,7 @@ import java.util.stream.Stream;
 
 public class Indexer {
 
-    private static HashMap<String, int[]> termDic = new HashMap<>(); // 0 - #docs, 1- #showsTotal, 2- line in posting
+    private HashMap<String, int[]> termDic = new HashMap<>(); // 0 - #docs, 1- #showsTotal, 2- line in posting
    // private HashMap<String, int[]> ChunkTermDic = new HashMap<>(); // 0 - #docs, 1- #showsTotal, 2- line in posting
     private HashMap<String, String> ChunkTermDicDocs = new HashMap<>(); //
     private String currDocName = "";
@@ -26,13 +26,14 @@ public class Indexer {
     private int[] termInfo;
     private int[] updateTermInfo;
     //private HashMap<String, int[]> currDicOfQueue = new HashMap<>();
+    public static Queue<Document> currChunk = new LinkedList<>();
 
     private TreeMap<String, int[]> littleDic;
     private int numPosingFiles;
     private int currPostingFileIndex;
 
 
-    private void indexAll(Queue<Document> q_docs) {
+    private void indexAll() {
 
         indexPosting = -1; // line number in posting file
         FILE_PATH = "C:\\Users\\Tali\\IdeaProjects\\SearchEngine\\out\\dictionary.txt";
@@ -50,10 +51,10 @@ public class Indexer {
         String allPlacesInDoc = "";
         String docsToAdd = "";
 
-        while (q_docs != null && !q_docs.isEmpty()) { //indexes all docs in the queue (CHUNK)
-            littleDic = new TreeMap<String, int[]>(String.CASE_INSENSITIVE_ORDER);
+        while (currChunk != null && !currChunk.isEmpty()) { //indexes all docs in the queue (CHUNK)
+            littleDic = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
             //currDicOfQueue = new HashMap<>(); // a new for each chunk
-            currDoc = q_docs.poll();
+            currDoc = currChunk.poll();
             currDocDic = currDoc.getAllTerms();
             currDocName = currDoc.getId();
 
@@ -154,6 +155,7 @@ public class Indexer {
                 updateTermInfo[2] = indexPosting; //new line.
                 termDic.put(key, updateTermInfo); //adds curr term to big dic
             }
+
             try { //write to posting file. in abc order !
                 termToAdd = key + "|" + ChunkTermDicDocs.get(key); //string .... // doc1:tf;1,46,89|doc5:tf;6,72
                 //termToAdd = indexPosting + ", " + termListOfDocs ;
@@ -358,71 +360,71 @@ public class Indexer {
 
     }
 
-    public void start(){
-        createFile( "my new file :)");
-    }
+    //public void start(){
+   //     createFile( "my new file :)");
+  //  }
 
     public void add (){
         addNewTerm("Abba, tf = 2, idf = 3.");
     }
 
     public void test (){
-        Queue<Document> docs = new LinkedList<Document>();
-        HashMap<String, int[]> tDic = new HashMap<>();
-
-        Document d1 = new Document();
-        Document d2 = new Document();
-        Document d3 = new Document();
-
-        int[] test = new int[3];
-        test[0] = 1;
-        test[1] = 0;
-        test[2] = 2;
-
-        StringBuilder sb = new StringBuilder();
-        tDic.put("Abba", test);
-
-        int[] test2 = new int[3];
-        test2[0] = 4;
-        test2[1] = 0;
-        test2[2] = 2;
-
-        tDic.put("Ima",test2);
-
-        d1.setId("FB396005");
-        d1.setText(sb);
-        d1.setTfMax(9);
-        d1.setTermDic(tDic);
-
-        StringBuilder sb2 = new StringBuilder();
-        HashMap<String, int[]> tDic2 = new HashMap<>();
-
-        tDic2.put("Ima" , test);
-        tDic2.put("Abba", test);
-        tDic2.put("Tomer", test);
-
-        d2.setId("SW396938");
-        d2.setText(sb2);
-        d2.setTfMax(5);
-        d2.setTermDic(tDic2);
-
-        StringBuilder sb3 = new StringBuilder();
-        HashMap<String, int[]> tDic3 = new HashMap<>();
-
-        tDic3.put("Tomer" , test);
-        tDic3.put("Abba", test);
-        tDic3.put("Tomer", test);
-
-        d3.setId("TA834655");
-        d3.setText(sb3);
-        d3.setTfMax(2);
-        d3.setTermDic(tDic3);
-
-        docs.add(d1);
-        docs.add(d2);
-        docs.add(d3);
-
-
+//        /*Queue<Document> docs = new LinkedList<Document>();
+//        HashMap<String, int[]> tDic = new HashMap<>();
+//
+//        Document d1 = new Document();
+//        Document d2 = new Document();
+//        Document d3 = new Document();
+//
+//        int[] test = new int[3];
+//        test[0] = 1;
+//        test[1] = 0;
+//        test[2] = 2;
+//
+//        StringBuilder sb = new StringBuilder();
+//        tDic.put("Abba", test);
+//
+//        int[] test2 = new int[3];
+//        test2[0] = 4;
+//        test2[1] = 0;
+//        test2[2] = 2;
+//
+//        tDic.put("Ima",test2);
+//
+//        d1.setId("FB396005");
+//        d1.setText(sb);
+//        d1.setTfMax(9);
+//        d1.setTermDic(tDic);
+//
+//        StringBuilder sb2 = new StringBuilder();
+//        HashMap<String, int[]> tDic2 = new HashMap<>();
+//
+//        tDic2.put("Ima" , test);
+//        tDic2.put("Abba", test);
+//        tDic2.put("Tomer", test);
+//
+//        d2.setId("SW396938");
+//        d2.setText(sb2);
+//        d2.setTfMax(5);
+//        d2.setTermDic(tDic2);
+//
+//        StringBuilder sb3 = new StringBuilder();
+//        HashMap<String, int[]> tDic3 = new HashMap<>();
+//
+//        tDic3.put("Tomer" , test);
+//        tDic3.put("Abba", test);
+//        tDic3.put("Tomer", test);
+//
+//        d3.setId("TA834655");
+//        d3.setText(sb3);
+//        d3.setTfMax(2);
+//        d3.setTermDic(tDic3);
+//
+//        docs.add(d1);
+//        docs.add(d2);
+//        docs.add(d3);
+//
+//
 
      //   termDic.put("Abba", test);
      //   termDic.put("Ima", test);
@@ -449,6 +451,8 @@ public class Indexer {
 
 
 
-        indexAll(docs);
+        //indexAll(docs);
     }
+
+    public void start (){ indexAll();}
 }

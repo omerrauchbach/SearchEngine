@@ -11,20 +11,22 @@ import java.util.Map;
 
 public class Main {
 
-    static Parse parse = new Parse();
     static Indexer indexer = new Indexer();
+    static Parse parse = new Parse(false, null);
 
     public static void main(String[] args) {
 
-        ReadFile rf = new ReadFile("C:\\Users\\Tali\\Desktop\\BGU\\searchEngine");
+        ReadFile rf = new ReadFile("C:\\Users\\Tali\\BGU\\searchEngine");
 
         //indexer.start();
        // indexer.add();
        // indexer.search();
-        indexer.test();
+        //indexer.test();
+        parse.start();
+        indexer.start();
 
         rf.readInsideAllFiles();
-        Parse parse_test = new Parse();
+        Parse parse_test = new Parse(false,null);
         parse_test.start();
 
         for(Map.Entry<String, int[]> entry : parse_test.termDic.entrySet()) {

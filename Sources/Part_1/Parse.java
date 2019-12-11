@@ -88,8 +88,10 @@ public class Parse {
                     System.out.println(currToken );
                 }
 
+
                 newDoc.clear();
                 Indexer.docList.add(newDoc);
+
                 allTokens = null;
 
             }
