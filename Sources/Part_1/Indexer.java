@@ -13,25 +13,27 @@ import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.util.stream.Stream;
 
-public class Indexer {
+public class Indexer extends Thread {
 
-    private HashMap<String, int[]> termDic = new HashMap<>(); // 0 - #docs, 1- #showsTotal, 2- line in posting
-   // private HashMap<String, int[]> ChunkTermDic = new HashMap<>(); // 0 - #docs, 1- #showsTotal, 2- line in posting
+    public static HashMap<String, int[]> termDic = new HashMap<>(); // 0 - #docs, 1- #showsTotal, 2- line in posting
     private HashMap<String, String> ChunkTermDicDocs = new HashMap<>(); //
     private String currDocName = "";
     private Document currDoc;
     private HashMap<String, int[]> currDocDic = new HashMap<>();
     private String FILE_PATH = "";
-    private static int indexPosting;
+    private int indexPosting;
     private int[] termInfo;
     private int[] updateTermInfo;
-    //private HashMap<String, int[]> currDicOfQueue = new HashMap<>();
     public static Queue<Document> currChunk = new LinkedList<>();
 
     private TreeMap<String, int[]> littleDic;
     private int numPosingFiles;
     private int currPostingFileIndex;
 
+
+    public Indexer(String postingPath){
+        FILE_PATH = postingPath;
+    }
 
     private void indexAll() {
 
@@ -301,7 +303,6 @@ public class Indexer {
         }
     }
 
-
     private void createDic (){
         termDic = new HashMap<>();
         int[] valuesForTerm = new int [3];
@@ -359,10 +360,6 @@ public class Indexer {
 
 
     }
-
-    //public void start(){
-   //     createFile( "my new file :)");
-  //  }
 
     public void add (){
         addNewTerm("Abba, tf = 2, idf = 3.");
@@ -455,4 +452,13 @@ public class Indexer {
     }
 
     public void start (){ indexAll();}
+
+    public static void restart(){
+        Queue<Document> currChunk = new LinkedList<>();
+    }
+
+
+    public void run(){
+        indexAll();
+    }
 }
