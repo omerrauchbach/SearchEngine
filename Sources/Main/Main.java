@@ -22,8 +22,9 @@ public class Main {
        // indexer.add();
        // indexer.search();
         //indexer.test();
-        parse.start();
-        indexer.start();
+        //parse.start();
+        //indexer.start();
+        indexer.test44();
 
         rf.readInsideAllFiles();
         Parse parse_test = new Parse(false,null);
