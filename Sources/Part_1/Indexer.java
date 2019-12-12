@@ -40,23 +40,18 @@ public class Indexer {
         while (!stopIndexer) {
             indexPosting = 1; // line number in posting file
             counterPostingFiles = 1; // counter for posting files.
-            //currPostingFileIndex = 1;
             FILE_PATH = "C:\\Users\\Tali\\IdeaProjects\\SearchEngine\\out\\posting" + currPostingFileIndex + ".txt";
             allPostingPath = "C:\\Users\\Tali\\IdeaProjects\\SearchEngine\\out";
             path = Paths.get(FILE_PATH);
 
-            String termListOfDocs = "";
-            String allDocsForTerm = "";
             String termToAdd = "";
             String allInfoOfTermForPosting = "";
             String allPlacesInDoc = "";
-            String docsToAdd = "";
             littleDic = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
             int[] docInfo;
 
             while (currChunk != null && !currChunk.isEmpty()) { //indexes all docs in the queue (CHUNK)
-                //currDicOfQueue = new HashMap<>(); // a new for each chunk
                 currDoc = currChunk.poll();
                 currDocDic = currDoc.getAllTerms();
                 currDocName = currDoc.getId();
@@ -100,7 +95,7 @@ public class Indexer {
             boolean newFilePosting = true;
             for (String key : littleDic.keySet()) { //adds all curr Chunk's dic to big dic.
 
-                //try { /////////////////// write to posting file.
+                //try { // write to posting file.
                 termToAdd = key + "|" + ChunkTermDicDocs.get(key) + "\n"; //string .... // doc1:tf;1,46,89|doc5:tf;6,72
                 FILE_PATH = "C:\\Users\\Tali\\IdeaProjects\\SearchEngine\\out\\posting" + currPostingFileIndex + ".txt";
                 if (newFilePosting == true) {
@@ -119,29 +114,26 @@ public class Indexer {
             }
             counterPostingFiles = new File(allPostingPath).listFiles().length - 1; //"production" always there.
 
-            if (counterPostingFiles == 2) { //now merge !  ! /////// change to 2 !!!!!!!!!!!!!!!!!!
+            if (counterPostingFiles == 2) { //now merge !
                 mergePosting();
 
             }
 
         } //nothing left to index. // one merged posting file::
-        String allPosting = "C:\\Users\\Tali\\IdeaProjects\\SearchEngine\\out";
-        File mainDir = new File(allPosting);
-        File[] files = mainDir.listFiles();
-        File totalPosting = new File("C:\\Users\\Tali\\IdeaProjects\\SearchEngine\\out\\postingFile.txt");
-        File merged = files[0]; //old name file
-        merged.renameTo(totalPosting);
 
-        termDic = null; //delete the old one.
-        FILE_PATH = "C:\\Users\\Tali\\IdeaProjects\\SearchEngine\\out\\postingFile.txt";
+        termDic = null; //initialize.
+        //FILE_PATH = "C:\\Users\\Tali\\IdeaProjects\\SearchEngine\\out\\postingFile.txt";
 
-        File[] lastFile = new File("C:\\Users\\Tali\\IdeaProjects\\SearchEngine\\out").listFiles();
+   /*     File[] lastFile = new File("C:\\Users\\Tali\\IdeaProjects\\SearchEngine\\out").listFiles();
         if (lastFile != null && lastFile.length > 0) {
             File oldMerged = new File("C:\\Users\\Tali\\IdeaProjects\\SearchEngine\\out\\posting" + currPostingFileIndex + ".txt");
             File lastOne = files[0];
             merged.renameTo(oldMerged); //only file that left.
             createDic(); //most important part.
-        }
+        }*/
+
+        createDic(); //most important part.
+
     }
 
     private void mergePosting () {
@@ -252,13 +244,13 @@ public class Indexer {
 
         termDic = new HashMap<>();
         int[] valuesForTerm = new int [3];
-        FILE_PATH = "C:\\Users\\Tali\\IdeaProjects\\SearchEngine\\out\\postingFile.txt"; // final file.
+        FILE_PATH = "C:\\Users\\Tali\\IdeaProjects\\SearchEngine\\out\\posting" + currPostingFileIndex + ".txt"; // final file.
         try{
             Scanner textScan = new Scanner(new File(FILE_PATH)); //only one merged posting file ! with all terms !
             int lineIndex = 0;
             int df ;
             int totalShows;
-            String[] alldata;
+            String[] allData;
             String term = "";
             boolean newTerm;
 
@@ -271,17 +263,17 @@ public class Indexer {
 
                 while (str != null && str.length()>0) {
                     //alldata = new String[str.length()]; /////////// ????????????????????
-                    alldata = str.split(":|\\;|\\|");
+                    allData = str.split(":|\\;|\\|");
 
                     if (newTerm) { //only start of reading line. removes term itself ! (index 0 )
-                        term = alldata[0];
+                        term = allData[0];
                         str = str.substring(str.indexOf("|") + 1);
                         newTerm = false;
                     }
                     while (str != null) { //one more doc to add.
-                        alldata = str.split(":|\\;|\\|"); //line without term itself.
+                        allData = str.split(":|\\;|\\|"); //line without term itself.
                         df++;
-                        totalShows = totalShows + Integer.parseInt(alldata[1]); //adds #appearences in each doc.
+                        totalShows = totalShows + Integer.parseInt(allData[1]); //adds #appearences in each doc.
 
                         if (str.indexOf("|") == -1) {
                             str = null;
