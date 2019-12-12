@@ -11,11 +11,12 @@ import java.util.HashMap;
  * This class reads all the files in the directory's path
  */
 
-public class ReadFile {
+public class ReadFile extends Thread {
 
     private String pathDir;
     private StringBuilder allLinesInDoc;
-    //private HashMap<String,Integer> notCities = new HashMap<>();
+    public static boolean stopParser = false;
+
     int counter = 0;
 
     /**
@@ -31,7 +32,7 @@ public class ReadFile {
     // reads all the files inside the corpus directory
     public void readInsideAllFiles() {
 
-        File rootDirectory = new File(pathDir + "\\tests");
+        File rootDirectory = new File(pathDir + "\\corpus_1");
         File[] allDirectories = rootDirectory.listFiles();
 
         if (allDirectories != null) {
@@ -135,6 +136,14 @@ public class ReadFile {
             return "";
         else
             return (doc.substring(startIndexId+7 , endIndexId)).trim();
+    }
+
+    public void run(){
+        readInsideAllFiles();
+    }
+
+    public static void restart(){
+        stopParser = false;
     }
 
 

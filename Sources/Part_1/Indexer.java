@@ -13,16 +13,19 @@ import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.util.stream.Stream;
 
-public class Indexer {
+public class Indexer extends Thread {
 
     public static HashMap<String, int[]> termDic = new HashMap<>(); // 0 - #docs, 1- #showsTotal, 2- line in posting
+
     public static HashMap<String, int[]> allDocuments = new HashMap<>(); // 0 - maxTF, 1- #uniqueTerms, 2- length of doc
+
 
     private HashMap<String, String> ChunkTermDicDocs = new HashMap<>(); //
     private String currDocName = "";
     private Document currDoc;
     private HashMap<String, int[]> currDocDic = new HashMap<>();
     private String FILE_PATH = "";
+
     private int indexPosting;
     private int[] termInfo;
     private int[] updateTermInfo;
@@ -34,6 +37,10 @@ public class Indexer {
     String allPostingPath = "";
     public static boolean stopIndexer = false;
     private Path path = null;
+
+    public Indexer(String postingPath){
+        FILE_PATH = postingPath;
+    }
 
     private void indexAll() {
 
@@ -381,7 +388,19 @@ public class Indexer {
     }
 
     public void start (){ indexAll();}
+
+
+    public static void restart(){
+        Queue<Document> currChunk = new LinkedList<>();
+    }
+
+
+    public void run(){
+        indexAll();
+    }
+
     public void test33 (){ mergePosting();}
     public void test44 () {createDic();}
+
 
 }

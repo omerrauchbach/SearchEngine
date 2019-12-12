@@ -10,12 +10,11 @@ import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.util.*;
 
-public class Parse {
+public class Parse extends Thread {
 
     public static Queue<Document> documentsSet = new LinkedList<>();
     private Set<String> stopWords = new HashSet<>();
-    public static HashMap<String , int[]> termDic = new HashMap<>();
-    public static String[] allTokens ;
+    public  String[] allTokens ;
     private int index ;
     private String[] sums = {"Dollars","million","billion","trillion","m","bn"};
     private String[] months = {"jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec","January",
@@ -24,9 +23,12 @@ public class Parse {
     boolean iSstemmer ;
     Stemmer stemmer = new Stemmer();
     private Document newDoc;
-    private Indexer ind = new Indexer();
     DecimalFormat df = new DecimalFormat("#.###");
+
     private String termLocationsInDoc = "";
+
+    public static boolean stopIndexer = false;
+
 
     public Parse(boolean stemmer , String stopWordPath){
 
@@ -38,11 +40,13 @@ public class Parse {
 
     private void parseDocs() {
         String currToken = "";
+
+        while (!ReadFile.stopParser) {
             while (!documentsSet.isEmpty()) {
                 newDoc = documentsSet.poll();
-                docName=newDoc.getId();
+                docName = newDoc.getId();
                 //if(!docName.equals("FBIS3-122"))
-                  //  continue;
+                //  continue;
                 System.out.println(docName);
                 //System.out.println("-------------------------"+counter+",Id:"+newDoc.getId()+"-----------------------------------");
                 allTokens = newDoc.getText().split("(?!,[0-9])[(--)\",\\/?@!\\[\\]:;*#'+)_(\\s]+");
@@ -50,9 +54,11 @@ public class Parse {
                 try {
                     while (index < allTokens.length) {
                         currToken = allTokens[index].trim();
+
                         //termLocationsInDoc = ""; // a new one.
                        // if(currToken.equals("2107"))
                          //   System.out.println("+++++++++++++=====");
+
 
                         //currToken = startEndWord(currToken);
                         if (currToken.equals("") || currToken.length() == 1 || currToken.equals("\n") || stopWord(startEndWord(currToken))) {
@@ -83,9 +89,9 @@ public class Parse {
 
                         }
                     }
-                }catch (Exception e){
+                } catch (Exception e) {
                     e.printStackTrace();
-                    System.out.println(currToken );
+                    System.out.println(currToken);
                 }
 
 
@@ -95,6 +101,7 @@ public class Parse {
                 allTokens = null;
 
             }
+        }
 
 
     }
@@ -103,7 +110,7 @@ public class Parse {
         if(term != null && !term.equals("")) {
             int[] data = new int[4];
             data[0] = 1;
-            //System.out.println(term+","+ data[0]+","+docName);
+            System.out.println(term+","+ data[0]+","+docName);
             newDoc.termDic.put(term, data);
             termLocationsInDoc = String.valueOf(index); //adds curr location of term in doc.
             newDoc.termPlacesInDoc.put(term, termLocationsInDoc);
@@ -135,7 +142,7 @@ public class Parse {
             newData[0]++;
             newDoc.termDic.remove(term.toUpperCase());
             newDoc.termDic.put(term , newData);
-            //System.out.println(term + "," + newData[0]);
+            System.out.println(term + "," + newData[0]);
         }
 
     }
@@ -772,10 +779,6 @@ public class Parse {
 
     }
 
-    public void start(){
-        parseDocs();
-    }
-
     private void setStopWord(String path){
 
         File rootDirectory= null;
@@ -798,6 +801,15 @@ public class Parse {
             alert.show();
         }
 
+    }
+
+    public static void restart(){
+        documentsSet = new LinkedList<>();
+        stopIndexer = false;
+    }
+
+    public void run(){
+        parseDocs();
     }
 }
 

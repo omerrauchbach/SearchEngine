@@ -85,4 +85,9 @@ public class Document {
         this.docText = null;
     }
 
+    @Override
+    public String toString(){
+        return id;
+    }
+
 }
