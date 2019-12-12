@@ -82,7 +82,7 @@ public class ReadFile {
                 newDoc.setId("");
             else {
                 id = currDoc.substring(startIndexId + 7, endIndexId).trim();
-                newDoc.setId(id+","+counter);
+                newDoc.setId(id);
             }
 
             //set Title <TI>,</TI>

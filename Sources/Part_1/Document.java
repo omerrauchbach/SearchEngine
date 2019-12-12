@@ -10,11 +10,15 @@ public class Document {
     private String  docText;
     private int tfMax;
     public HashMap<String, int[]> termDic ;
-    private String title ;
+    private String title;
+    private String length;
+    public HashMap<String, String> termPlacesInDoc;
+
 
     public Document(){
 
         termDic = new HashMap<>();
+        termPlacesInDoc = new HashMap<>();
     }
 
     public int uniqueTerm(){
@@ -67,6 +71,14 @@ public class Document {
                 Max = entry.getValue()[0];
         }
         return Max;
+    }
+
+    public int getLength(){
+        int length =0 ;
+        for(Map.Entry<String, int[]> entry : termDic.entrySet()){
+            length = length + entry.getValue()[0];
+        }
+        return length;
     }
 
     public void clear(){

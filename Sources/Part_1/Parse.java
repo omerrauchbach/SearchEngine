@@ -26,7 +26,7 @@ public class Parse {
     private Document newDoc;
     private Indexer ind = new Indexer();
     DecimalFormat df = new DecimalFormat("#.###");
-
+    private String termLocationsInDoc = "";
 
     public Parse(boolean stemmer , String stopWordPath){
 
@@ -50,7 +50,7 @@ public class Parse {
                 try {
                     while (index < allTokens.length) {
                         currToken = allTokens[index].trim();
-
+                        //termLocationsInDoc = ""; // a new one.
                        // if(currToken.equals("2107"))
                          //   System.out.println("+++++++++++++=====");
 
@@ -105,6 +105,8 @@ public class Parse {
             data[0] = 1;
             //System.out.println(term+","+ data[0]+","+docName);
             newDoc.termDic.put(term, data);
+            termLocationsInDoc = String.valueOf(index); //adds curr location of term in doc.
+            newDoc.termPlacesInDoc.put(term, termLocationsInDoc);
         }
     }
 
@@ -118,6 +120,8 @@ public class Parse {
             else {
                 newData[0]++;
                 newDoc.termDic.replace(term, newData);
+                termLocationsInDoc = newDoc.termPlacesInDoc.get(term) + "," + index; //adds curr location of term in doc.
+                newDoc.termPlacesInDoc.replace(term, termLocationsInDoc);
                 System.out.println(term + "," + newData[0]+","+docName);
             }
         }

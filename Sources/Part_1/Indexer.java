@@ -23,7 +23,7 @@ public class Indexer {
     private Document currDoc;
     private HashMap<String, int[]> currDocDic = new HashMap<>();
     private String FILE_PATH = "";
-    public static int indexPosting;
+    private int indexPosting;
     private int[] termInfo;
     private int[] updateTermInfo;
     public static Queue<Document> currChunk = new LinkedList<>();
@@ -65,7 +65,6 @@ public class Indexer {
                 docInfo[0] = currDoc.getTfMax();
                 docInfo[1] = currDocDic.keySet().size(); //how many unique terms.
                 docInfo[2] = currDoc.getLength();
-
                 allDocuments.put(currDocName, docInfo); //adds current doc to docs dic.
 
                 for (String key : currDocDic.keySet()) {
@@ -77,11 +76,10 @@ public class Indexer {
                         updateTermInfo[1] = littleDic.get(key)[1] + currDocDic.get(key)[0]; //#shows total == adds num of appearences in specific doc. !!!
                         updateTermInfo[2] = littleDic.get(key)[2]; //same line of old term in doc.
                         littleDic.replace(key, updateTermInfo); //replaces values in little dic
-                        //termDic.replace(key, updateTermInfo); //replaces values in little dic
 
-                        allPlacesInDoc = "??,???"; // איךלשמור מיקומים ספציפיים בתוך המסמך ????
+                        allPlacesInDoc = currDoc.termPlacesInDoc.get(key);
                         allInfoOfTermForPosting = ChunkTermDicDocs.get(key) + "|" + currDocName + ":" + termInfo[1] + ";" + allPlacesInDoc;
-                        ChunkTermDicDocs.put(key, allInfoOfTermForPosting); // updates info for posting.
+                        ChunkTermDicDocs.replace(key, allInfoOfTermForPosting); // updates info for posting.
 
                     } else { //first time of this term in chunk.
                         termInfo = new int[4];
@@ -90,7 +88,7 @@ public class Indexer {
 
                         littleDic.put(key, termInfo); //first doc in list, for posting!
 
-                        allPlacesInDoc = "???,??";
+                        allPlacesInDoc = currDoc.termPlacesInDoc.get(key);
                         allInfoOfTermForPosting = currDocName + ":" + termInfo[1] + ";" + allPlacesInDoc;
                         ChunkTermDicDocs.put(key, allInfoOfTermForPosting); //info for posting.
                     }
@@ -101,31 +99,9 @@ public class Indexer {
             //Q is empty, now moves to big doc: //// write to postinggggggg !!!!!!!!!!!
             boolean newFilePosting = true;
             for (String key : littleDic.keySet()) { //adds all curr Chunk's dic to big dic.
-                //allDocsForTerm = ChunkTermDicDocs.get(key); //list of all docs
-        /*        boolean exists = false;
-                String currIndexLinePosting = "";
-                if (termDic.containsKey(key)) { //word already exists in dic
 
-                    updateTermInfo = new int[4];
-                    updateTermInfo[0] = littleDic.get(key)[0] + termDic.get(key)[0]; // sums all # of docs
-                    updateTermInfo[1] = littleDic.get(key)[1] + termDic.get(key)[1]; // sums all #shows total
-                    int currIndexLine = updateTermInfo[2] = termDic.get(key)[2]; // already has index
-                    termDic.replace(key, updateTermInfo); //replaces values in big dic
-
-                    ///// לשרשר לסוף השורה בפוסטינג !!!!.............ץ///////////
-
-                } else { //first entry of term in big dic.
-
-                    updateTermInfo = new int[4];
-                    updateTermInfo[0] = littleDic.get(key)[0]; // # of docs
-                    updateTermInfo[1] = littleDic.get(key)[1]; //num of appearances in all docs. !!!
-                    termDic.put(key, updateTermInfo); //adds curr term to big dic
-
-                }*/
-
-                //try { //write to posting file.
+                //try { /////////////////// write to posting file.
                 termToAdd = key + "|" + ChunkTermDicDocs.get(key) + "\n"; //string .... // doc1:tf;1,46,89|doc5:tf;6,72
-                //termToAdd = indexPosting + ", " + termListOfDocs ;
                 FILE_PATH = "C:\\Users\\Tali\\IdeaProjects\\SearchEngine\\out\\posting" + currPostingFileIndex + ".txt";
                 if (newFilePosting == true) {
                     if (createFile(termToAdd) == true) {
@@ -147,35 +123,6 @@ public class Indexer {
                 mergePosting();
 
             }
-            //////////////////////////////////////////////////////////////////////////////////// ??????????????????
-               /* try{
-                    Scanner textScan = new Scanner(new File(FILE_PATH));
-
-                    while (textScan.hasNextLine() && !exists) {
-                        String str = textScan.nextLine();
-                        if (str.indexOf(key) != -1) { //word already exists in dic (posting, txt file)
-
-                            int currTF = currDocDic.get(key)[0]; //num of appearences in specific doc. !!!!!!!!!!!
-                            String docToAdd = str + ", " + currDocName + "-" + currTF; //// d2-7, (times in doc)
-
-                            List<String> fileContent = new ArrayList<>(Files.readAllLines(path, StandardCharsets.UTF_8));
-
-                            for (int i = 0; i < fileContent.size(); i++) {
-                                if (fileContent.get(i).equals(str)) {
-                                    fileContent.set(i,docToAdd);
-                                    break;
-                                }
-                            }
-                            Files.write(path, fileContent, StandardCharsets.UTF_8);
-                            exists = true;
-                        }
-                    }
-                    if (!exists){} //new term needs to be added
-
-                } catch (IOException ex) {
-                    // Report
-                }
-            }*/
 
         } //nothing left to index. // one merged posting file::
         String allPosting = "C:\\Users\\Tali\\IdeaProjects\\SearchEngine\\out";
@@ -187,7 +134,14 @@ public class Indexer {
 
         termDic = null; //delete the old one.
         FILE_PATH = "C:\\Users\\Tali\\IdeaProjects\\SearchEngine\\out\\postingFile.txt";
-        createDic(); //most important part.
+
+        File[] lastFile = new File("C:\\Users\\Tali\\IdeaProjects\\SearchEngine\\out").listFiles();
+        if (lastFile != null && lastFile.length > 0) {
+            File oldMerged = new File("C:\\Users\\Tali\\IdeaProjects\\SearchEngine\\out\\posting" + currPostingFileIndex + ".txt");
+            File lastOne = files[0];
+            merged.renameTo(oldMerged); //only file that left.
+            createDic(); //most important part.
+        }
     }
 
     private void mergePosting () {
@@ -198,7 +152,6 @@ public class Indexer {
             String output = "";
             String term1 = "";
             String term2 = "";
-            //currPostingFileIndex++; //new file, next number index.
 
             try {
                 int oldPostingIndex = currPostingFileIndex-1;
@@ -260,7 +213,7 @@ public class Indexer {
         try {
             writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(FILE_PATH), "utf-8")); //new file number
             writer.write(terms);
-            ((BufferedWriter) writer).newLine();
+            //((BufferedWriter)writer).newLine();
             isCreated = true;
 
         } catch (IOException ex) {
@@ -296,9 +249,10 @@ public class Indexer {
 
 
     private void createDic (){ //create the final dic. at the end.
+
         termDic = new HashMap<>();
         int[] valuesForTerm = new int [3];
-        FILE_PATH = "C:\\Users\\Tali\\IdeaProjects\\SearchEngine\\out\\postingFile.txt"; // removeeee
+        FILE_PATH = "C:\\Users\\Tali\\IdeaProjects\\SearchEngine\\out\\postingFile.txt"; // final file.
         try{
             Scanner textScan = new Scanner(new File(FILE_PATH)); //only one merged posting file ! with all terms !
             int lineIndex = 0;
@@ -314,9 +268,9 @@ public class Indexer {
                 String str = textScan.nextLine();
                 df = 0;
                 totalShows = 0;
-                //newTerm = true;
+
                 while (str != null && str.length()>0) {
-                    alldata = new String[str.length()]; /////////// ????????????????????
+                    //alldata = new String[str.length()]; /////////// ????????????????????
                     alldata = str.split(":|\\;|\\|");
 
                     if (newTerm) { //only start of reading line. removes term itself ! (index 0 )
@@ -328,7 +282,7 @@ public class Indexer {
                         alldata = str.split(":|\\;|\\|"); //line without term itself.
                         df++;
                         totalShows = totalShows + Integer.parseInt(alldata[1]); //adds #appearences in each doc.
-                        //alldata = null;
+
                         if (str.indexOf("|") == -1) {
                             str = null;
                             break;
@@ -346,15 +300,6 @@ public class Indexer {
         } catch (IOException ex) {
             // Report
         }
-    }
-
-    private void addNewTerm (String terms){
-        try {
-            Files.write(Paths.get("dictionary.txt"), terms.getBytes(), StandardOpenOption.APPEND);
-        }catch (IOException e) {
-            //exception handling left as an exercise for the reader
-        }
-
     }
 
     public void test (){
