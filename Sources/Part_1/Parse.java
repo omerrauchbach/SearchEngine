@@ -24,6 +24,9 @@ public class Parse extends Thread {
     Stemmer stemmer = new Stemmer();
     private Document newDoc;
     DecimalFormat df = new DecimalFormat("#.###");
+
+    private String termLocationsInDoc = "";
+
     public static boolean stopIndexer = false;
 
 
@@ -52,8 +55,10 @@ public class Parse extends Thread {
                     while (index < allTokens.length) {
                         currToken = allTokens[index].trim();
 
-                        // if(currToken.equals("2107"))
-                        //   System.out.println("+++++++++++++=====");
+                        //termLocationsInDoc = ""; // a new one.
+                       // if(currToken.equals("2107"))
+                         //   System.out.println("+++++++++++++=====");
+
 
                         //currToken = startEndWord(currToken);
                         if (currToken.equals("") || currToken.length() == 1 || currToken.equals("\n") || stopWord(startEndWord(currToken))) {
@@ -107,6 +112,8 @@ public class Parse extends Thread {
             data[0] = 1;
             System.out.println(term+","+ data[0]+","+docName);
             newDoc.termDic.put(term, data);
+            termLocationsInDoc = String.valueOf(index); //adds curr location of term in doc.
+            newDoc.termPlacesInDoc.put(term, termLocationsInDoc);
         }
     }
 
@@ -120,6 +127,8 @@ public class Parse extends Thread {
             else {
                 newData[0]++;
                 newDoc.termDic.replace(term, newData);
+                termLocationsInDoc = newDoc.termPlacesInDoc.get(term) + "," + index; //adds curr location of term in doc.
+                newDoc.termPlacesInDoc.replace(term, termLocationsInDoc);
                 System.out.println(term + "," + newData[0]+","+docName);
             }
         }

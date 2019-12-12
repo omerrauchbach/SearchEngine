@@ -17,16 +17,16 @@ public class Main {
     public static void main(String[] args) {
 
         ReadFile rf = new ReadFile("C:\\Users\\Tali\\BGU\\searchEngine");
+        rf.readInsideAllFiles();
 
         //indexer.start();
        // indexer.add();
        // indexer.search();
         //indexer.test();
-        //parse.start();
-        //indexer.start();
+        parse.start();
+        indexer.start();
         indexer.test44();
 
-        rf.readInsideAllFiles();
         Parse parse_test = new Parse(false,null);
         parse_test.start();
 
