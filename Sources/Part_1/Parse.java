@@ -90,7 +90,7 @@ public class Parse {
 
 
                 newDoc.clear();
-                Indexer.docList.add(newDoc);
+                Indexer.currChunk.add(newDoc);
 
                 allTokens = null;
 
