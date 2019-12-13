@@ -27,6 +27,8 @@ public class Indexer extends Thread {
     private Document currDoc;
     private HashMap<String, int[]> currDocDic = new HashMap<>();
     private String FILE_PATH = "";
+    public static String filePath = ""; //get it from parse. !
+
     private int indexPosting;
     private int[] termInfo;
     private int[] updateTermInfo;
@@ -38,6 +40,7 @@ public class Indexer extends Thread {
     String allPostingPath = "";
     public static boolean stopIndexer = false;
     private Path path = null;
+    private boolean finishChunk = false;
 
     public Indexer(String postingPath){
         FILE_PATH = postingPath;
@@ -48,8 +51,10 @@ public class Indexer extends Thread {
         while (!stopIndexer) {
             indexPosting = 1; // line number in posting file
             counterPostingFiles = 1; // counter for posting files.
-            FILE_PATH = "C:\\Users\\Tali\\IdeaProjects\\SearchEngine\\out\\posting" + currPostingFileIndex + ".txt";
-            allPostingPath = "C:\\Users\\Tali\\IdeaProjects\\SearchEngine\\out";
+            //FILE_PATH = "C:\\Users\\Tali\\IdeaProjects\\SearchEngine\\out\\posting" + currPostingFileIndex + ".txt";
+            FILE_PATH = filePath + "\\out\\posting" + currPostingFileIndex + ".txt";
+
+            allPostingPath = filePath + "\\out";
             path = Paths.get(FILE_PATH);
 
             String termToAdd = "";
@@ -58,45 +63,52 @@ public class Indexer extends Thread {
             littleDic = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
             int[] docInfo;
+            while (!finishChunk) {
+                while (currChunk != null && !currChunk.isEmpty()) { //indexes all docs in the queue (CHUNK)
 
-            while (currChunk != null && !currChunk.isEmpty()) { //indexes all docs in the queue (CHUNK)
-                currDoc = currChunk.poll();
-                currDocDic = currDoc.getAllTerms();
-                currDocName = currDoc.getId();
+                    finishChunk = false; //still has docs to index.
 
-                docInfo = new int[3];
-                docInfo[0] = currDoc.getTfMax();
-                docInfo[1] = currDocDic.keySet().size(); //how many unique terms.
-                docInfo[2] = currDoc.getLength();
-                allDocuments.put(currDocName, docInfo); //adds current doc to docs dic.
+                    currDoc = currChunk.poll();
+                    currDocDic = currDoc.getAllTerms();
+                    currDocName = currDoc.getId();
 
-                for (String key : currDocDic.keySet()) {
+                    docInfo = new int[3];
+                    docInfo[0] = currDoc.getTfMax();
+                    docInfo[1] = currDocDic.keySet().size(); //how many unique terms.
+                    docInfo[2] = currDoc.getLength();
+                    allDocuments.put(currDocName, docInfo); //adds current doc to docs dic.
 
-                    if (littleDic.containsKey(key)) {
+                    for (String key : currDocDic.keySet()) {
 
-                        updateTermInfo = new int[4];
-                        updateTermInfo[0] = littleDic.get(key)[0] + 1; // adds 1 to curr # of docs
-                        updateTermInfo[1] = littleDic.get(key)[1] + currDocDic.get(key)[0]; //#shows total == adds num of appearences in specific doc. !!!
-                        updateTermInfo[2] = littleDic.get(key)[2]; //same line of old term in doc.
-                        littleDic.replace(key, updateTermInfo); //replaces values in little dic
+                        if (littleDic.containsKey(key)) {
 
-                        allPlacesInDoc = currDoc.termPlacesInDoc.get(key);
-                        allInfoOfTermForPosting = ChunkTermDicDocs.get(key) + "|" + currDocName + ":" + termInfo[1] + ";" + allPlacesInDoc;
-                        ChunkTermDicDocs.replace(key, allInfoOfTermForPosting); // updates info for posting.
+                            updateTermInfo = new int[4];
+                            updateTermInfo[0] = littleDic.get(key)[0] + 1; // adds 1 to curr # of docs
+                            updateTermInfo[1] = littleDic.get(key)[1] + currDocDic.get(key)[0]; //#shows total == adds num of appearences in specific doc. !!!
+                            updateTermInfo[2] = littleDic.get(key)[2]; //same line of old term in doc.
+                            littleDic.replace(key, updateTermInfo); //replaces values in little dic
 
-                    } else { //first time of this term in chunk.
-                        termInfo = new int[4];
-                        termInfo[0] = 1; // first doc in list
-                        termInfo[1] = currDocDic.get(key)[0]; //num of appearances in specific doc. !!!
+                            allPlacesInDoc = currDoc.termPlacesInDoc.get(key);
+                            allInfoOfTermForPosting = ChunkTermDicDocs.get(key) + "|" + currDocName + ":" + termInfo[1] + ";" + allPlacesInDoc;
+                            ChunkTermDicDocs.replace(key, allInfoOfTermForPosting); // updates info for posting.
 
-                        littleDic.put(key, termInfo); //first doc in list, for posting!
+                        } else { //first time of this term in chunk.
+                            termInfo = new int[4];
+                            termInfo[0] = 1; // first doc in list
+                            termInfo[1] = currDocDic.get(key)[0]; //num of appearances in specific doc. !!!
 
-                        allPlacesInDoc = currDoc.termPlacesInDoc.get(key);
-                        allInfoOfTermForPosting = currDocName + ":" + termInfo[1] + ";" + allPlacesInDoc;
-                        ChunkTermDicDocs.put(key, allInfoOfTermForPosting); //info for posting.
+                            littleDic.put(key, termInfo); //first doc in list, for posting!
+
+                            allPlacesInDoc = currDoc.termPlacesInDoc.get(key);
+                            allInfoOfTermForPosting = currDocName + ":" + termInfo[1] + ";" + allPlacesInDoc;
+                            ChunkTermDicDocs.put(key, allInfoOfTermForPosting); //info for posting.
+                        }
                     }
                 }
+                currChunk = null;
+                finishChunk = true; ////only if there was actually a new chunk docs. not if just waiting.
             }
+
             currPostingFileIndex++;
 
             //Q is empty, now moves to big doc: //// write to postinggggggg !!!!!!!!!!!
@@ -105,7 +117,7 @@ public class Indexer extends Thread {
 
                 //try { // write to posting file.
                 termToAdd = key + "|" + ChunkTermDicDocs.get(key) + "\n"; //string .... // doc1:tf;1,46,89|doc5:tf;6,72
-                FILE_PATH = "C:\\Users\\Tali\\IdeaProjects\\SearchEngine\\out\\posting" + currPostingFileIndex + ".txt";
+                FILE_PATH = filePath + "\\out\\posting" + currPostingFileIndex + ".txt";
                 if (newFilePosting == true) {
                     if (createFile(termToAdd) == true) {
                         //Files.write(path, termToAdd.getBytes(), StandardOpenOption.APPEND); /// אמור להיות בדיוק בשורה שהיא האינדקס :O
@@ -120,10 +132,11 @@ public class Indexer extends Thread {
                     }
                 }
             }
+            littleDic = null;
+            counterPostingFiles = new File(allPostingPath).listFiles().length - 1; //"production" always there.
+
             File f = new File(allPostingPath);
             if(f.exists() && !f.isDirectory()) {
-
-                counterPostingFiles = new File(allPostingPath).listFiles().length - 1; //"production" always there.
 
                 if (counterPostingFiles == 2) { //now merge !
                     mergePosting();
@@ -137,17 +150,17 @@ public class Indexer extends Thread {
         termDic = null; //initialize.
         //FILE_PATH = "C:\\Users\\Tali\\IdeaProjects\\SearchEngine\\out\\postingFile.txt";
 
-   /*     File[] lastFile = new File("C:\\Users\\Tali\\IdeaProjects\\SearchEngine\\out").listFiles();
-        if (lastFile != null && lastFile.length > 0) {
-            File oldMerged = new File("C:\\Users\\Tali\\IdeaProjects\\SearchEngine\\out\\posting" + currPostingFileIndex + ".txt");
-            File lastOne = files[0];
-            merged.renameTo(oldMerged); //only file that left.
-            createDic(); //most important part.
-        }*/
+/*     File[] lastFile = new File("C:\\Users\\Tali\\IdeaProjects\\SearchEngine\\out").listFiles();
+    if (lastFile != null && lastFile.length > 0) {
+        File oldMerged = new File("C:\\Users\\Tali\\IdeaProjects\\SearchEngine\\out\\posting" + currPostingFileIndex + ".txt");
+        File lastOne = files[0];
+        merged.renameTo(oldMerged); //only file that left.
+        createDic(); //most important part.
+    }*/
 
         createDic(); //most important part.
-
     }
+
 
     private void mergePosting () {
 
@@ -160,8 +173,8 @@ public class Indexer extends Thread {
 
             try {
                 int oldPostingIndex = currPostingFileIndex-1;
-                Scanner sc1 = new Scanner((new File("C:\\Users\\Tali\\IdeaProjects\\SearchEngine\\out\\posting" + currPostingFileIndex + ".txt")));
-                Scanner sc2 = new Scanner((new File("C:\\Users\\Tali\\IdeaProjects\\SearchEngine\\out\\posting" + oldPostingIndex + ".txt")));
+                Scanner sc1 = new Scanner((new File(filePath + "\\out\\posting" + currPostingFileIndex + ".txt")));
+                Scanner sc2 = new Scanner((new File(filePath + "\\out\\posting" + oldPostingIndex + ".txt")));
                 String line1 = sc1.next();
                 String line2 = sc2.next();
                 term1 = line1.substring(0, line1.indexOf("|")); // only term itself, with no other data.
@@ -204,7 +217,7 @@ public class Indexer extends Thread {
             }
 
             currPostingFileIndex++;
-            FILE_PATH = "C:\\Users\\Tali\\IdeaProjects\\SearchEngine\\out\\posting" + currPostingFileIndex+ ".txt"; //new file, number
+            FILE_PATH = filePath + "\\out\\posting" + currPostingFileIndex+ ".txt"; //new file, number
 
             if (createFile(output) == true) { //"posting+1.txt"
                 deleteTwoTempPosting("posting" + currPostingFileIndex + ".txt");
@@ -234,7 +247,7 @@ public class Indexer extends Thread {
     }
 
     private void deleteTwoTempPosting (String postingPath){ //which file not to delete!!
-        String allPosting = "C:\\Users\\Tali\\IdeaProjects\\SearchEngine\\out";
+        String allPosting = filePath + "\\out\\posting";
 
         File mainDir = new File(allPosting);
         File[] files = mainDir.listFiles();
@@ -257,7 +270,7 @@ public class Indexer extends Thread {
 
         termDic = new HashMap<>();
         int[] valuesForTerm = new int [3];
-        FILE_PATH = "C:\\Users\\Tali\\IdeaProjects\\SearchEngine\\out\\posting" + currPostingFileIndex + ".txt"; // final file.
+        FILE_PATH = filePath + "\\out\\posting" + currPostingFileIndex + ".txt"; // final file.
         try{
             Scanner textScan = new Scanner(new File(FILE_PATH)); //only one merged posting file ! with all terms !
             int lineIndex = 0;
