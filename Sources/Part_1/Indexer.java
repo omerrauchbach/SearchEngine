@@ -11,6 +11,8 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.Stream;
 
 public class Indexer extends Thread {
@@ -25,11 +27,10 @@ public class Indexer extends Thread {
     private Document currDoc;
     private HashMap<String, int[]> currDocDic = new HashMap<>();
     private String FILE_PATH = "";
-
     private int indexPosting;
     private int[] termInfo;
     private int[] updateTermInfo;
-    public static Queue<Document> currChunk = new LinkedList<>();
+    public static BlockingQueue<Document> currChunk = new LinkedBlockingQueue<>(20);
 
     private TreeMap<String, int[]> littleDic;
     private int currPostingFileIndex = 1;
@@ -119,12 +120,17 @@ public class Indexer extends Thread {
                     }
                 }
             }
-            counterPostingFiles = new File(allPostingPath).listFiles().length - 1; //"production" always there.
+            File f = new File(allPostingPath);
+            if(f.exists() && !f.isDirectory()) {
 
-            if (counterPostingFiles == 2) { //now merge !
-                mergePosting();
+                counterPostingFiles = new File(allPostingPath).listFiles().length - 1; //"production" always there.
 
+                if (counterPostingFiles == 2) { //now merge !
+                    mergePosting();
+
+                }
             }
+
 
         } //nothing left to index. // one merged posting file::
 

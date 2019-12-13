@@ -9,10 +9,12 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.util.*;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public class Parse extends Thread {
 
-    public static Queue<Document> documentsSet = new LinkedList<>();
+    public static BlockingQueue<Document> documentsSet = new LinkedBlockingQueue<>(20);
     private Set<String> stopWords = new HashSet<>();
     public  String[] allTokens ;
     private int index ;
@@ -47,7 +49,7 @@ public class Parse extends Thread {
                 docName = newDoc.getId();
                 //if(!docName.equals("FBIS3-122"))
                 //  continue;
-                System.out.println(docName);
+                //System.out.println(docName);
                 //System.out.println("-------------------------"+counter+",Id:"+newDoc.getId()+"-----------------------------------");
                 allTokens = newDoc.getText().split("(?!,[0-9])[(--)\",\\/?@!\\[\\]:;*#'+)_(\\s]+");
                 index = 0;
@@ -129,7 +131,7 @@ public class Parse extends Thread {
                 newDoc.termDic.replace(term, newData);
                 termLocationsInDoc = newDoc.termPlacesInDoc.get(term) + "," + index; //adds curr location of term in doc.
                 newDoc.termPlacesInDoc.replace(term, termLocationsInDoc);
-                System.out.println(term + "," + newData[0]+","+docName);
+                //System.out.println(term + "," + newData[0]+","+docName);
             }
         }
 
@@ -785,7 +787,7 @@ public class Parse extends Thread {
         if(path == null || path.length() == 0)
           rootDirectory = new File("Resources\\stop_words.txt");
         else
-            rootDirectory = new File(path);
+            rootDirectory = new File(path+"\\stop_words.txt");
         if(rootDirectory != null) {
             try {
                 BufferedReader myBufferedReader = new BufferedReader(new InputStreamReader(new FileInputStream(rootDirectory)));
@@ -804,7 +806,7 @@ public class Parse extends Thread {
     }
 
     public static void restart(){
-        documentsSet = new LinkedList<>();
+        documentsSet = new LinkedBlockingQueue<>();
         stopIndexer = false;
     }
 
