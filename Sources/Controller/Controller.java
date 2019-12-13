@@ -12,7 +12,7 @@ import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
-import org.apache.*;
+
 
 import javax.swing.*;
 import java.io.File;
@@ -58,9 +58,10 @@ public class Controller {
                 Thread threadParse = new Thread(parse);
                 Thread threadIndexer = new Thread(indexer);
 
-                threadReadFile.start();
-                threadParse.start();
                 threadIndexer.start();
+                threadParse.start();
+                threadReadFile.start();
+
 
                 threadReadFile.join();
                 threadParse.join();
