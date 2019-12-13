@@ -34,7 +34,7 @@ public class ReadFile extends Thread {
 
         File rootDirectory = new File(pathDir + "\\corpus_1");
         File[] allDirectories = rootDirectory.listFiles();
-
+        System.out.println("ReadFile");
         if (allDirectories != null) {
             allLinesInDoc = new StringBuilder();
             for (File file : allDirectories) {
