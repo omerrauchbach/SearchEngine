@@ -31,9 +31,6 @@ public class Main extends Application {
       launch(args);
     }
 
-
-
-
     @Override
     public void start(Stage primaryStage) throws Exception {
         Parent mainWindow = FXMLLoader.load(getClass().getResource("/Main.fxml"));
@@ -41,6 +38,24 @@ public class Main extends Application {
         primaryStage.show();
     }
 }
+
+
+/*
+public class Main{
+
+
+
+    public static void main(String[] args) {
+        ReadFile rf = new ReadFile("C:\\Users\\omer\\Desktop");
+        rf.readInsideAllFiles();
+        Parse parse_test = new Parse(false, null);
+        parse_test.start();
+
+    }
+
+
+}
+*/
 
 
 /*

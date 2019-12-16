@@ -52,19 +52,19 @@ public class Controller {
             try {
                 ReadFile rd = new ReadFile(docPath);
                 Parse parse = new Parse(stemming, docPath);
-                Indexer indexer = new Indexer(postingPathSaved);
+                Indexer indexer = new Indexer(stemming ,postingPathSaved);
 
                 Thread threadReadFile = new Thread(rd);
                 Thread threadParse = new Thread(parse);
                 Thread threadIndexer = new Thread(indexer);
 
-                threadIndexer.start();
+
                 threadParse.start();
                 threadReadFile.start();
+                threadIndexer.start();
 
-
-                threadReadFile.join();
                 threadParse.join();
+                threadReadFile.join();
                 threadIndexer.join();
 
             }

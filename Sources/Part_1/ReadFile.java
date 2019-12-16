@@ -3,6 +3,7 @@ package Part_1;
 import javafx.scene.control.Alert;
 
 import java.io.*;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.HashMap;
@@ -17,7 +18,7 @@ public class ReadFile extends Thread {
     private StringBuilder allLinesInDoc;
     public static boolean stopParser = false;
 
-    int counter = 0;
+
 
     /**
      * the constructor of the class
@@ -39,7 +40,6 @@ public class ReadFile extends Thread {
             allLinesInDoc = new StringBuilder();
             for (File file : allDirectories) {
                 File[] current = file.listFiles(); // gets the file itself, inside the corpus directory
-                counter++;
                 if (null != current) {
                     for (File txtfile : current) {
                         try {
@@ -57,12 +57,16 @@ public class ReadFile extends Thread {
                     }
                 }
             }
+
+
         }
         else{
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setContentText("Error in folder path");
             alert.show();
         }
+
+        stopParser = true;
     }
 
     private void createDoc(){
@@ -96,8 +100,6 @@ public class ReadFile extends Thread {
                 newDoc.setTitle(title);
             }
 
-            if(id.equals("FBIS3-2221"))
-                System.out.println("stop!!!!");
 
             // gets the document's <TEXT></TEXT> tags
             if (currDoc.contains("<TEXT>")) {
@@ -121,7 +123,22 @@ public class ReadFile extends Thread {
                 if (docText.length() > 0)
                     newDoc.setText(docText);
             }
-            Parse.documentsSet.add(newDoc);    // adds the specific document
+            try {// adds the specific document
+
+                Parse.documentsSet.put(newDoc);
+                System.out.println(newDoc.getId() + ":ReadFile");
+            }
+            catch(IllegalStateException e){
+                //Queue full
+                e.printStackTrace();
+            }
+            catch (IllegalMonitorStateException e) {
+                e.printStackTrace();
+            }
+            catch (InterruptedException e){
+                e.printStackTrace();
+            }
+
             startInd = allLinesInDoc.indexOf("<DOC>", endInd); //continues to the next doc in file
         }
 
