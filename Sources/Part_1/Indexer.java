@@ -74,7 +74,10 @@ public class Indexer extends Thread {
                     int[] currTermInfo = entry.getValue();
                     String key = entry.getKey();
                     String post = "|" + currDoc.getId() + ":" + currTermInfo[0] + ";" + currDoc.getPlaces(key);
-                    postingAdd.put(key , post);
+                    if (postingAdd.containsKey(key))
+                        postingAdd.replace(key, postingAdd.get(key) + post);
+                    else
+                        postingAdd.put(key, post);
                     if(tmpDicTerm.containsKey(key)){
                         int[] termInfo = tmpDicTerm.get(key);
                         termDic = new int[3];
