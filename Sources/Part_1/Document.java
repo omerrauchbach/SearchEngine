@@ -33,6 +33,15 @@ public class Document {
 
     public String getText() { return docText.toString(); }
 
+    public String getPlaces(String term){
+
+        String location = termPlacesInDoc.get(term);
+        if(location != null)
+            return location;
+        else
+            return "";
+    }
+
     public String getId() {
         return id;
     }

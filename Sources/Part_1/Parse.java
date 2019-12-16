@@ -14,7 +14,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 public class Parse extends Thread {
 
-    public static BlockingQueue<Document> documentsSet = new LinkedBlockingQueue<>(20);
+    public static BlockingQueue<Document> documentsSet = new LinkedBlockingQueue<>(500);
     private Set<String> stopWords = new HashSet<>();
     public  String[] allTokens ;
     private int index ;
@@ -26,8 +26,8 @@ public class Parse extends Thread {
     Stemmer stemmer = new Stemmer();
     private Document newDoc;
     DecimalFormat df = new DecimalFormat("#.###");
-
     private String termLocationsInDoc = "";
+
 
     public static boolean stopIndexer = false;
 
@@ -43,66 +43,68 @@ public class Parse extends Thread {
     private void parseDocs() {
         String currToken = "";
 
-        while (!ReadFile.stopParser) {
-            while (!documentsSet.isEmpty()) {
-                newDoc = documentsSet.poll();
-                docName = newDoc.getId();
-                //if(!docName.equals("FBIS3-122"))
-                //  continue;
-                //System.out.println(docName);
-                //System.out.println("-------------------------"+counter+",Id:"+newDoc.getId()+"-----------------------------------");
-                allTokens = newDoc.getText().split("(?!,[0-9])[(--)\",\\/?@!\\[\\]:;*#'+)_(\\s]+");
-                index = 0;
-                try {
-                    while (index < allTokens.length) {
-                        currToken = allTokens[index].trim();
+        while (!ReadFile.stopParser || (ReadFile.stopParser && !documentsSet.isEmpty())) {
 
-                        //termLocationsInDoc = ""; // a new one.
-                       // if(currToken.equals("2107"))
-                         //   System.out.println("+++++++++++++=====");
+            if(!documentsSet.isEmpty() && (documentsSet.size()== 500 || ReadFile.stopParser)) {
+                Queue<Document> queueOfDoc =new LinkedList<>();
+                documentsSet.drainTo(queueOfDoc,500);
+                while (!queueOfDoc.isEmpty()) {
+                        newDoc = queueOfDoc.poll();
+                        docName = newDoc.getId();
+                        System.out.println(docName + ": Parse");
+                        allTokens = newDoc.getText().split("(?!,[0-9])[(--)\",\\/?@!\\[\\]:;*#'+)_(\\s]+");
+                        index = 0;
+                        try {
+                            while (index < allTokens.length) {
+                                currToken = allTokens[index].trim();
+                                if (currToken.equals("") || currToken.length() == 1 || currToken.equals("\n") || stopWord(startEndWord(currToken))) {
+                                    if (!currToken.equals("May")) {
+                                        index++;
+                                        continue;
+                                    }
+                                }
 
+                                //===================== price =========================//
+                                if (isDate(currToken)) {
+                                    handleDate(currToken);
+                                    index = index + 2;
+                                } else if (isPrice(currToken)) {
+                                    handlePrice(currToken);
+                                } else if (isPercent(currToken)) {
+                                    handlePercent(currToken);
+                                } else if (isNumericDouble(currToken)) {
+                                    handleNum(currToken);
+                                } else if (isBetween(currToken)) {
+                                    insertTermDic(currToken + allTokens[index + 1] + allTokens[index + 2] + allTokens[index + 3]);
+                                    index = index + 4;
+                                } else if (isLine(currToken)) {
+                                    handleLine(currToken);
 
-                        //currToken = startEndWord(currToken);
-                        if (currToken.equals("") || currToken.length() == 1 || currToken.equals("\n") || stopWord(startEndWord(currToken))) {
-                            if (!currToken.equals("May")) {
-                                index++;
-                                continue;
+                                } else {
+                                    handleWords(currToken);
+
+                                }
                             }
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            // System.out.println (currToken);
                         }
+                        newDoc.clear();
 
-                        //===================== price =========================//
-                        if (isDate(currToken)) {
-                            handleDate(currToken);
-                            index = index + 2;
-                        } else if (isPrice(currToken)) {
-                            handlePrice(currToken);
-                        } else if (isPercent(currToken)) {
-                            handlePercent(currToken);
-                        } else if (isNumericDouble(currToken)) {
-                            handleNum(currToken);
-                        } else if (isBetween(currToken)) {
-                            insertTermDic(currToken + allTokens[index + 1] + allTokens[index + 2] + allTokens[index + 3]);
-                            index = index + 4;
-                        } else if (isLine(currToken)) {
-                            handleLine(currToken);
-
-                        } else {
-                            handleWords(currToken);
-
-                        }
-                    }
-                } catch (Exception e) {
+                try {
+                    Indexer.currChunk.add(newDoc);
+                }
+                catch (IllegalStateException e ){
                     e.printStackTrace();
-                    System.out.println(currToken);
                 }
 
 
-                newDoc.clear();
-                Indexer.currChunk.add(newDoc);
+                        allTokens = null;
 
-                allTokens = null;
 
+                }
             }
+
         }
 
 
@@ -112,7 +114,7 @@ public class Parse extends Thread {
         if(term != null && !term.equals("")) {
             int[] data = new int[4];
             data[0] = 1;
-            System.out.println(term+","+ data[0]+","+docName);
+           //System.out.println(term+","+ data[0]+","+docName);
             newDoc.termDic.put(term, data);
             termLocationsInDoc = String.valueOf(index); //adds curr location of term in doc.
             newDoc.termPlacesInDoc.put(term, termLocationsInDoc);
@@ -144,7 +146,7 @@ public class Parse extends Thread {
             newData[0]++;
             newDoc.termDic.remove(term.toUpperCase());
             newDoc.termDic.put(term , newData);
-            System.out.println(term + "," + newData[0]);
+            //System.out.println(term + "," + newData[0]);
         }
 
     }
