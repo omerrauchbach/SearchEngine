@@ -454,6 +454,8 @@ public class Parse extends Thread {
                 break;
         }
 
+
+
         for(int endIndex = word.length()-1 ; endIndex  >= 1 ; endIndex --){
             if(word.charAt(word.length()-1 ) == '.' ||  word.charAt(word.length()-1) == ',' || word.charAt(word.length()-1 ) == '-'|| word.charAt(word.length()-1 ) == '\'' ) {
                 word = word.substring(0,word.length()-1);
