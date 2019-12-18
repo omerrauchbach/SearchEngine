@@ -126,6 +126,8 @@ public class ReadFile extends Thread {
             try {// adds the specific document
 
                 Parse.documentsSet.put(newDoc);
+                if(newDoc.getId().equals("FBIS3-2500"))
+                    System.out.println("stop!!!!");
                 System.out.println(newDoc.getId() + ":ReadFile");
             }
             catch(IllegalStateException e){
@@ -145,15 +147,6 @@ public class ReadFile extends Thread {
 
     }
 
-    private String getDocId(String doc){
-
-        int startIndexId =  doc.indexOf("<DOCNO>");
-        int endIndexId = doc.indexOf("</DOCNO>");
-        if(startIndexId == -1 || endIndexId == -1)
-            return "";
-        else
-            return (doc.substring(startIndexId+7 , endIndexId)).trim();
-    }
 
     public void run(){
         readInsideAllFiles();

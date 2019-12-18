@@ -11,7 +11,6 @@ public class Document {
     private int tfMax;
     public HashMap<String, int[]> termDic ;
     private String title;
-    private String length;
     public HashMap<String, String> termPlacesInDoc;
 
 
