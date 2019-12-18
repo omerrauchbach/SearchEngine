@@ -88,7 +88,6 @@ public class Controller {
     }
 
     public void onReset(){
-
         File rootFile = new File(documentPath.getText());
         File[] Files = rootFile.listFiles();
         for(File f : Files){
@@ -160,9 +159,7 @@ public class Controller {
             };
             invertedList.add(newEntry);
         }
-
         return invertedList;
-
     }
 
     private List<String> getInvAsList(){
