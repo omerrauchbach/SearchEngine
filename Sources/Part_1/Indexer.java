@@ -23,7 +23,6 @@ public class Indexer extends Thread {
     private HashMap<String, int[]> currDocDic = new HashMap<>();
     private String FILE_PATH = "";
     public static String filePath = ""; //get it from parse. !
-    private int indexPosting = 1;
 
     public static BlockingQueue<Document> currChunk = new LinkedBlockingQueue<>(5000);
     private TreeMap<String, int[]> littleDic;
@@ -107,7 +106,6 @@ public class Indexer extends Thread {
                     docInfo[1] = currDoc.uniqueTerm(); //how many unique terms.
                     docInfo[2] = currDoc.getLength();
                     tmpDicDoc.put(currDoc.getId(), docInfo); //adds current doc to docs dic.
-                    currDoc = queueOfDoc.poll();
                     allDocuments.put(currDoc.getId(), docInfo); //adds current doc to docs dic.
 
 
@@ -186,6 +184,7 @@ public class Indexer extends Thread {
 
         }
     }
+
     private void createPostingFile(String path , HashMap<String,String> ChunkTermDicDocs){
 
         try {
@@ -312,5 +311,4 @@ public class Indexer extends Thread {
     public void run(){
         indexAll();
     }
-
 }

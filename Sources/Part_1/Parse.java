@@ -45,8 +45,7 @@ public class Parse extends Thread {
 
         while (!ReadFile.stopParser || (ReadFile.stopParser && !documentsSet.isEmpty())) {
 
-            if(!documentsSet.isEmpty() && (documentsSet.size() >= 5000 || ReadFile.stopParser)) {
-
+            if(!documentsSet.isEmpty() && (documentsSet.size()>= 5000 || ReadFile.stopParser)) {
                 Queue<Document> queueOfDoc =new LinkedList<>();
                 documentsSet.drainTo(queueOfDoc,5000);
                 while (!queueOfDoc.isEmpty()) {
@@ -450,14 +449,14 @@ public class Parse extends Thread {
         return false;
     }
 
-    private String startEndWord(String word){
+    public String startEndWord(String word){
 
         if(word.equals("U.S."))
             return word;
 
         for(int startindex =0 ; startindex  < word.length() ; startindex ++){
-            if(word.charAt(0 ) == '.' ||  word.charAt(0) == ',' || word.charAt(0 ) == '-' ||word.charAt(0 ) == '\'') {
 
+            if(word.charAt(0 ) == '.' ||  word.charAt(0) == ',' || word.charAt(0 ) == '-' ||word.charAt(0 ) == '\'' ) {
                 word = word.substring(1);
             }
             else
@@ -469,6 +468,8 @@ public class Parse extends Thread {
             if(word.charAt(word.length()-1 ) == '.' ||  word.charAt(word.length()-1) == ',' || word.charAt(word.length()-1 ) == '-'|| word.charAt(word.length()-1 ) == '\'' ) {
 
                 word = word.substring(0,word.length()-1);
+
+
             }
             else
                 break;
@@ -728,6 +729,7 @@ public class Parse extends Thread {
     private void setStopWord(String path){
 
         File rootDirectory= null;
+
         if(path == null || path.length() == 0)
           rootDirectory = new File("Resources\\stop_words.txt");
         else
