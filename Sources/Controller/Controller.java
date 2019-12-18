@@ -39,7 +39,6 @@ public class Controller {
     String docPath= "" ;
     String postingPathSaved = "" ;
 
-
     public void onStart(){
 
         docPath = documentPath.getText();
@@ -58,7 +57,6 @@ public class Controller {
                 Thread threadParse = new Thread(parse);
                 Thread threadIndexer = new Thread(indexer);
 
-
                 threadParse.start();
                 threadReadFile.start();
                 threadIndexer.start();
@@ -66,24 +64,13 @@ public class Controller {
                 threadParse.join();
                 threadReadFile.join();
                 threadIndexer.join();
-
             }
             catch(Exception e){
                 e.printStackTrace();
             }finally {
                 System.out.println("Done!!!!!!!");
             }
-
-
-
-
-
-
-
         }
-
-
-
     }
 
     public void onBrowseDoc(){ Browse(documentPath); }
@@ -100,8 +87,7 @@ public class Controller {
         }
     }
 
-    public void onRestart(){
-
+    public void onReset(){
         File rootFile = new File(documentPath.getText());
         File[] Files = rootFile.listFiles();
         for(File f : Files){
@@ -143,16 +129,12 @@ public class Controller {
         Scene scene = new Scene(vbox);
         stage.setScene(scene);
         stage.show();
-
-
-
     }
 
     public void onLoadInv() throws IOException {
 
         Path out = Paths.get(postingPathSaved+"\\LoadInv");
         Files.write(out,getInvAsList());
-
     }
 
     private ObservableList<Map.Entry<String, Integer>> getObservableList(){
@@ -177,9 +159,7 @@ public class Controller {
             };
             invertedList.add(newEntry);
         }
-
         return invertedList;
-
     }
 
     private List<String> getInvAsList(){
@@ -189,8 +169,6 @@ public class Controller {
             InvList.add(entry.getKey()+","+entry.getValue()[0]+","+entry.getValue()[1]+","+entry.getValue()[2]);
 
         return InvList;
-
-
     }
 
     private void displayError(String error){
@@ -198,7 +176,4 @@ public class Controller {
         alert.setContentText(error);
         alert.show();
     }
-
-
-
 }
