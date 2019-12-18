@@ -14,7 +14,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 public class Parse extends Thread {
 
-    public static BlockingQueue<Document> documentsSet = new LinkedBlockingQueue<>(500);
+    public static BlockingQueue<Document> documentsSet = new LinkedBlockingQueue<>(5000);
     private Set<String> stopWords = new HashSet<>();
     public  String[] allTokens ;
     private int index ;
@@ -45,9 +45,9 @@ public class Parse extends Thread {
 
         while (!ReadFile.stopParser || (ReadFile.stopParser && !documentsSet.isEmpty())) {
 
-            if(!documentsSet.isEmpty() && (documentsSet.size()>= 500 || ReadFile.stopParser)) {
+            if(!documentsSet.isEmpty() && (documentsSet.size()>= 5000 || ReadFile.stopParser)) {
                 Queue<Document> queueOfDoc =new LinkedList<>();
-                documentsSet.drainTo(queueOfDoc,500);
+                documentsSet.drainTo(queueOfDoc,5000);
                 while (!queueOfDoc.isEmpty()) {
                         newDoc = queueOfDoc.poll();
                         docName = newDoc.getId();
@@ -490,17 +490,15 @@ public class Parse extends Thread {
         return false;
     }
 
-    private String startEndWord(String word){
+    public String startEndWord(String word){
 
-        boolean twoLetters = word.length()<3;
-        boolean countainStopChar =false;
         if(word.equals("U.S."))
             return word;
 
-        for(int startindex =0 ; startindex  < word.length()-1 ; startindex ++){
+        for(int startindex =0 ; startindex  < word.length() ; startindex ++){
             if(word.charAt(0 ) == '.' ||  word.charAt(0) == ',' || word.charAt(0 ) == '-' ||word.charAt(0 ) == '\'' ) {
                 word = word.substring(1);
-                countainStopChar = true;
+
             }
             else
                 break;
@@ -509,22 +507,12 @@ public class Parse extends Thread {
         for(int endIndex =word.length()-1 ; endIndex  >= 1 ; endIndex --){
             if(word.charAt(word.length()-1 ) == '.' ||  word.charAt(word.length()-1) == ',' || word.charAt(word.length()-1 ) == '-'|| word.charAt(word.length()-1 ) == '\'') {
                 word = word.substring(0,word.length()-1);
-                countainStopChar = true;
+
             }
             else
                 break;
         }
-        /*
-        ////first char
-        if(word.charAt(0) == '.' || word.charAt(0) == ':' || word.charAt(0) == ','  || word.charAt(0) == '-' || word.charAt(0) == '*') {
-            word = word.substring(1);
-            countainStopChar = true;
-        }
-        if(word.length()>0&&(word.charAt(word.length()-1) == '.' || word.charAt(word.length()-1) ==':' || word.charAt(word.length()-1) == ',' || word.charAt(word.length()-1) == '-')) {
-            word = word.substring(0, word.length() - 1);
-            countainStopChar = true;
-        }
-        */
+
         if(word.length() == 1)
             return "";
         return word;
