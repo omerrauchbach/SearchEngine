@@ -45,14 +45,14 @@ public class Parse extends Thread {
 
         while (!ReadFile.stopParser || (ReadFile.stopParser && !documentsSet.isEmpty())) {
 
-            if(!documentsSet.isEmpty() && (documentsSet.size()== 500 || ReadFile.stopParser)) {
+            if(!documentsSet.isEmpty() && (documentsSet.size()>= 500 || ReadFile.stopParser)) {
                 Queue<Document> queueOfDoc =new LinkedList<>();
                 documentsSet.drainTo(queueOfDoc,500);
                 while (!queueOfDoc.isEmpty()) {
                         newDoc = queueOfDoc.poll();
                         docName = newDoc.getId();
                         System.out.println(docName + ": Parse");
-                        allTokens = newDoc.getText().split("(?!,[0-9])[(--)\",\\/?@!\\[\\]:;*#'+)_(\\s]+");
+                        allTokens = newDoc.getText().split("(?!,[0-9])[(--)\",\\/?&@|!\\[\\]:;*#'+)_(\\s]+");
                         index = 0;
                         try {
                             while (index < allTokens.length) {
@@ -92,9 +92,12 @@ public class Parse extends Thread {
                         newDoc.clear();
 
                 try {
-                    Indexer.currChunk.add(newDoc);
+                    Indexer.currChunk.put(newDoc);
                 }
                 catch (IllegalStateException e ){
+                    e.printStackTrace();
+                }
+                catch (InterruptedException e){
                     e.printStackTrace();
                 }
 
@@ -106,7 +109,7 @@ public class Parse extends Thread {
             }
 
         }
-
+        stopIndexer = true;
 
     }
 
@@ -495,7 +498,7 @@ public class Parse extends Thread {
             return word;
 
         for(int startindex =0 ; startindex  < word.length()-1 ; startindex ++){
-            if(word.charAt(0 ) == '.' ||  word.charAt(0) == ',' || word.charAt(0 ) == '-' ||word.charAt(0 ) == '\'') {
+            if(word.charAt(0 ) == '.' ||  word.charAt(0) == ',' || word.charAt(0 ) == '-' ||word.charAt(0 ) == '\'' ) {
                 word = word.substring(1);
                 countainStopChar = true;
             }
@@ -504,7 +507,7 @@ public class Parse extends Thread {
         }
 
         for(int endIndex =word.length()-1 ; endIndex  >= 1 ; endIndex --){
-            if(word.charAt(word.length()-1 ) == '.' ||  word.charAt(word.length()-1) == ',' || word.charAt(word.length()-1 ) == '-'|| word.charAt(word.length()-1 ) == '\'' ) {
+            if(word.charAt(word.length()-1 ) == '.' ||  word.charAt(word.length()-1) == ',' || word.charAt(word.length()-1 ) == '-'|| word.charAt(word.length()-1 ) == '\'') {
                 word = word.substring(0,word.length()-1);
                 countainStopChar = true;
             }
@@ -755,13 +758,13 @@ public class Parse extends Thread {
                 int SecondNumDate =Integer.parseInt(lines[1]);
                 if(firstNumDate >0 && firstNumDate <32 && SecondNumDate > 0 && SecondNumDate <32 && isMonths(allTokens[index+1])) {
                     if(lines[0].length() == 1)
-                        insertTermDic("0"+lines[0] + "/" + turnMonthToNumber(allTokens[index + 1]));
+                        insertTermDic("0"+lines[0] + "-" + turnMonthToNumber(allTokens[index + 1]));
                     else
-                        insertTermDic(lines[0] + "/" + turnMonthToNumber(allTokens[index + 1]));
+                        insertTermDic(lines[0] + "-" + turnMonthToNumber(allTokens[index + 1]));
                     if(lines[1].length() == 1)
-                        insertTermDic("0"+lines[1] + "/" + turnMonthToNumber(allTokens[index + 1]));
+                        insertTermDic("0"+lines[1] + "-" + turnMonthToNumber(allTokens[index + 1]));
                     else
-                        insertTermDic(lines[1] + "/" + turnMonthToNumber(allTokens[index + 1]));
+                        insertTermDic(lines[1] + "-" + turnMonthToNumber(allTokens[index + 1]));
                     index = index+2;
                 }else{
                     insertTermDic(line);
