@@ -33,7 +33,7 @@ public class ReadFile extends Thread {
     // reads all the files inside the corpus directory
     public void readInsideAllFiles() {
 
-        File rootDirectory = new File(pathDir + "\\corpus_1");
+        File rootDirectory = new File(pathDir + "\\tests");
         File[] allDirectories = rootDirectory.listFiles();
         System.out.println("ReadFile");
         if (allDirectories != null) {
@@ -143,16 +143,6 @@ public class ReadFile extends Thread {
         }
 
 
-    }
-
-    private String getDocId(String doc){
-
-        int startIndexId =  doc.indexOf("<DOCNO>");
-        int endIndexId = doc.indexOf("</DOCNO>");
-        if(startIndexId == -1 || endIndexId == -1)
-            return "";
-        else
-            return (doc.substring(startIndexId+7 , endIndexId)).trim();
     }
 
     public void run(){

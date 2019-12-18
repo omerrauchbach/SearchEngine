@@ -62,15 +62,6 @@ public class Document {
         this.docText = text;
     }
 
-    public void setTfMax(int tfMax) {
-        this.tfMax = tfMax;
-    }
-
-    public void setTermDic (HashMap<String, int[]> tDic){
-        termDic = tDic;
-        tfMax = calMaxTf();
-    }
-
     private int calMaxTf(){
 
         int Max =0 ;

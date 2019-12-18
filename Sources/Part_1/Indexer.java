@@ -45,140 +45,6 @@ public class Indexer extends Thread {
     }
 
 
-    public void indexAllTest(){
-
-        while(!Parse.stopIndexer || (Parse.stopIndexer && !currChunk.isEmpty())){
-            Queue<Document> queueOfDoc =new LinkedList<>();
-            currChunk.drainTo(queueOfDoc,500);
-            HashMap<String , int[]> tmpDicTerm = new HashMap<>();
-            HashMap<String , int[]> tmpDicDoc = new HashMap<>();
-            HashMap<String,String>  postingAdd = new HashMap<>();
-            while(!queueOfDoc.isEmpty() ){
-                Document currDoc = queueOfDoc.poll();
-                System.out.println(currDoc.getId());
-
-
-                int[] termDic;
-                int[] docInfo = new int[3] ;
-
-                /////hundle tmpDicDoc /////////////
-                docInfo[0] = currDoc.getTfMax();
-                docInfo[1] = currDoc.uniqueTerm(); //how many unique terms.
-                docInfo[2] = currDoc.getLength();
-                tmpDicDoc.put(currDoc.getId(), docInfo); //adds current doc to docs dic.
-
-                ////hundle Terms////////
-                for(Map.Entry<String, int[]> entry  : currDoc.termDic.entrySet()){
-
-
-                    int[] currTermInfo = entry.getValue();
-                    String key = entry.getKey();
-                    String post = "|" + currDoc.getId() + ":" + currTermInfo[0] + ";" + currDoc.getPlaces(key);
-                    if (postingAdd.containsKey(key))
-                        postingAdd.replace(key, postingAdd.get(key) + post);
-                    else
-                        postingAdd.put(key, post);
-                    if(tmpDicTerm.containsKey(key)){
-                        int[] termInfo = tmpDicTerm.get(key);
-                        termDic = new int[3];
-                        termDic[0] = termInfo[0] + 1; // adds 1 to curr # of docs
-                        termDic[1] = termInfo[1] + currTermInfo[0]; //#shows total == adds num of appearences in specific doc. !!!.
-                        tmpDicTerm.replace(key, termDic); //replaces values in little dic
-
-
-
-                    }
-                    else{
-                        termDic = new int[3];
-                        termDic[0] = 1; // adds 1 to curr # of docs
-                        termDic[1] = currTermInfo[0]; //#shows total == adds num of appearences in specific doc. !!!
-                        tmpDicTerm.put(key, termDic); //replaces values in little dic
-                    }
-                }
-
-                if(queueOfDoc.isEmpty()){
-                    updateIndexerAndPosting(tmpDicTerm , tmpDicDoc , postingAdd);
-                }
-
-            }
-        }
-
-
-
-
-    }
-
-    private void  updateIndexerAndPosting(HashMap<String , int[]> tmpDicTerm ,HashMap<String ,
-            int[]> tmpDicDoc,HashMap<String,String>  postingAdd ) {
-
-        ///// update term Dic and posting//////////
-        HashMap<Integer, String> linePostingAdd = new HashMap<>();
-        for(Map.Entry<String, int[]> entry  : tmpDicTerm.entrySet()){
-
-            //new Data
-            String key = entry.getKey();
-            int[] value = entry.getValue();
-
-            if(termDic.containsKey(key)){
-                //old Value
-                int[] oldValue = termDic.get(key);
-                int[] newValue = new int[3];
-                newValue[0] = value[0] + oldValue[0];
-                newValue[1] = value[1]+ oldValue[1];
-                newValue[2] = oldValue[2];
-                termDic.replace(key , newValue);
-                linePostingAdd.put(newValue[2] , postingAdd.get(key));
-            }
-            else
-            {
-
-                value[2] = indexPosting;
-                indexPosting++;
-                termDic.put(key ,value);
-                linePostingAdd.put(value[2]  , postingAdd.get(key));
-            }
-
-        }
-
-        updatePosting(linePostingAdd);
-
-        ///// update doc Dic //////
-
-        allDocuments.putAll(tmpDicDoc);
-
-    }
-
-    private void updatePosting(HashMap<Integer,String> linePostingAdd )
-    {
-
-
-        try {
-            BufferedReader file = new BufferedReader(new FileReader(FILE_PATH));
-            String line;
-            String input = "";
-            int counter = 0;
-            while ((line = file.readLine()) != null) {
-                String inputData = linePostingAdd.get(counter);
-                if (inputData == null)
-                    input += line + '\n';
-                else
-                    input += line + inputData + '\n';
-                counter++;
-            }
-            file.close();
-
-            FileOutputStream fileOut = new FileOutputStream(FILE_PATH);
-            fileOut.write(input.getBytes());
-            fileOut.close();
-        }
-        catch (IOException e){
-            e.printStackTrace();
-        }
-
-
-    }
-
-
     private void indexAll() {
 
         while (!Parse.stopIndexer) {
@@ -548,7 +414,7 @@ public class Indexer extends Thread {
 
 
     public void run(){
-        indexAllTest();
+        indexAll();
     }
 
     public void test33 (){ mergePosting();}
