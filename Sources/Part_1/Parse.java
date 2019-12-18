@@ -45,7 +45,6 @@ public class Parse extends Thread {
 
         while (!ReadFile.stopParser || (ReadFile.stopParser && !documentsSet.isEmpty())) {
 
-
             if(!documentsSet.isEmpty() && (documentsSet.size()>= 5000 || ReadFile.stopParser)) {
                 Queue<Document> queueOfDoc =new LinkedList<>();
                 documentsSet.drainTo(queueOfDoc,5000);
@@ -54,7 +53,7 @@ public class Parse extends Thread {
                         docName = newDoc.getId();
                         System.out.println(docName + ": Parse");
 
-                        allTokens = newDoc.getText().split("(?!,[0-9])[\",\\/?@!\\[\\]:;*#'+)_(\\s]+");
+                        allTokens = newDoc.getText().split("(?!,[0-9])[\",\\/?@!\\[\\]:;*&=#'+)_(\\s]+");
 
                         index = 0;
 
@@ -96,14 +95,14 @@ public class Parse extends Thread {
                         newDoc.clear();
 
                 try {
-
-                    //Indexer.currChunk.add(newDoc);
-
+                    Indexer.currChunk.put(newDoc);
                 }
                 catch (IllegalStateException e ){
                     e.printStackTrace();
                 }
-
+                catch (InterruptedException i) {
+                    //
+                }
                         allTokens = null;
                 }
             }

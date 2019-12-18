@@ -24,7 +24,6 @@ public class Indexer extends Thread {
     private String FILE_PATH = "";
     public static String filePath = ""; //get it from parse. !
 
-
     public static BlockingQueue<Document> currChunk = new LinkedBlockingQueue<>(5000);
     private TreeMap<String, int[]> littleDic;
     private int currPostingFileIndex = 1;
@@ -38,10 +37,9 @@ public class Indexer extends Thread {
         userFilePath = postingPath;
 
         if(stemming)
-            FILE_PATH = postingPath+"\\stemmig.txt";
+            FILE_PATH = postingPath+"\\stemming.txt";
         else
-            FILE_PATH = postingPath+"\\nonStemmig.txt";
-
+            FILE_PATH = postingPath+"\\nonStemming.txt";
 
         if(Files.exists(Paths.get(FILE_PATH))) {
             try {
@@ -56,8 +54,6 @@ public class Indexer extends Thread {
         }else{
             createFile();
         }
-
-
     }
 
     private void createFile(){
@@ -72,7 +68,6 @@ public class Indexer extends Thread {
         }catch (IOException e){
             e.printStackTrace();
         }
-
     }
 
     private void indexAll() {
@@ -132,9 +127,7 @@ public class Indexer extends Thread {
                                 int[] sameValue =littleDic.remove(key.toUpperCase());
                                 littleDic.put(key,sameValue);
                             }
-
                         }
-
 
                         if (littleDic.containsKey(key)) {
 
@@ -156,7 +149,6 @@ public class Indexer extends Thread {
                                 littleDic.put(key, termInfo); //first doc in list, for posting!
                                 allInfoOfTermForPosting = currDoc.getId() + ":" + termInfo[1] + ";" + currDoc.getPlaces(key);
                                 ChunkTermDicDocs.put(key, allInfoOfTermForPosting); //info for posting.
-
                             }
                         }
 
@@ -166,21 +158,10 @@ public class Indexer extends Thread {
                         currPostingFileIndex++;
                         if(currPostingFileIndex > 2)
                             mergePosting();
-
                     }
-
                 }
-
-
-
             }
-
-
-
-
         } //nothing left to index. // one merged posting file::
-
-
     }
 
     private void updateTermDic(){
@@ -217,13 +198,9 @@ public class Indexer extends Thread {
         catch (IOException e){
             e.printStackTrace();
         }
-
-
-
     }
 
     private void mergePosting () {
-
 
         String line1 = "";
         String line2 = "";
@@ -306,7 +283,6 @@ public class Indexer extends Thread {
                     file.delete();
                 }
             }
-
         }
     }
 
@@ -335,8 +311,4 @@ public class Indexer extends Thread {
     public void run(){
         indexAll();
     }
-
-
-
-
 }
