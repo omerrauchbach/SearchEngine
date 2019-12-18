@@ -778,6 +778,7 @@ public class Parse extends Thread {
     private void setStopWord(String path){
 
         File rootDirectory= null;
+
         if(path == null || path.length() == 0)
           rootDirectory = new File("Resources\\stop_words.txt");
         else
