@@ -46,13 +46,16 @@ public class Parse extends Thread {
         while (!ReadFile.stopParser || (ReadFile.stopParser && !documentsSet.isEmpty())) {
 
             if(!documentsSet.isEmpty() && (documentsSet.size() >= 500 || ReadFile.stopParser)) {
+
                 Queue<Document> queueOfDoc =new LinkedList<>();
                 documentsSet.drainTo(queueOfDoc,500);
                 while (!queueOfDoc.isEmpty()) {
                         newDoc = queueOfDoc.poll();
                         docName = newDoc.getId();
                         System.out.println(docName + ": Parse");
+
                         allTokens = newDoc.getText().split("(?!,[0-9])[\",\\/?@!\\[\\]:;*#'+)_(\\s]+");
+
                         index = 0;
 
                         try {
@@ -93,15 +96,21 @@ public class Parse extends Thread {
                         newDoc.clear();
 
                 try {
+
                     //Indexer.currChunk.add(newDoc);
+
                 }
                 catch (IllegalStateException e ){
                     e.printStackTrace();
                 }
+
                         allTokens = null;
                 }
             }
         }
+
+        stopIndexer = true;
+
     }
 
     private void insertFirstOccur(String term){
@@ -448,6 +457,7 @@ public class Parse extends Thread {
 
         for(int startindex =0 ; startindex  < word.length() ; startindex ++){
             if(word.charAt(0 ) == '.' ||  word.charAt(0) == ',' || word.charAt(0 ) == '-' ||word.charAt(0 ) == '\'') {
+
                 word = word.substring(1);
             }
             else
@@ -455,11 +465,9 @@ public class Parse extends Thread {
         }
 
 
-
-
-
         for(int endIndex = word.length()-1 ; endIndex  >= 1 ; endIndex --){
             if(word.charAt(word.length()-1 ) == '.' ||  word.charAt(word.length()-1) == ',' || word.charAt(word.length()-1 ) == '-'|| word.charAt(word.length()-1 ) == '\'' ) {
+
                 word = word.substring(0,word.length()-1);
             }
             else
@@ -692,6 +700,7 @@ public class Parse extends Thread {
                 int SecondNumDate =Integer.parseInt(lines[1]);
                 if(firstNumDate >0 && firstNumDate <32 && SecondNumDate > 0 && SecondNumDate <32 && isMonths(allTokens[index+1])) {
                     if(lines[0].length() == 1)
+
                         insertTermDic(turnMonthToNumber(allTokens[index + 1]) + "-0"+lines[0]);
                     else
                         insertTermDic(turnMonthToNumber(allTokens[index + 1]) + "-" + lines[0]);
@@ -699,6 +708,7 @@ public class Parse extends Thread {
                         insertTermDic(turnMonthToNumber(allTokens[index + 1]) + "-0"+lines[1]);
                     else
                         insertTermDic(turnMonthToNumber(allTokens[index + 1]) + "-" + lines[1]);
+
                     index = index+2;
                 }else{
                     insertTermDic(line);
