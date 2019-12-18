@@ -33,7 +33,7 @@ public class ReadFile extends Thread {
     // reads all the files inside the corpus directory
     public void readInsideAllFiles() {
 
-        File rootDirectory = new File(pathDir + "\\corpus_1");
+        File rootDirectory = new File(pathDir + "\\tests");
         File[] allDirectories = rootDirectory.listFiles();
         System.out.println("ReadFile");
         if (allDirectories != null) {
@@ -126,8 +126,6 @@ public class ReadFile extends Thread {
             try {// adds the specific document
 
                 Parse.documentsSet.put(newDoc);
-                if(newDoc.getId().equals("FBIS3-2500"))
-                    System.out.println("stop!!!!");
                 System.out.println(newDoc.getId() + ":ReadFile");
             }
             catch(IllegalStateException e){

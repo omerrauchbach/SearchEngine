@@ -14,7 +14,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 public class Parse extends Thread {
 
-    public static BlockingQueue<Document> documentsSet = new LinkedBlockingQueue<>(500);
+    public static BlockingQueue<Document> documentsSet = new LinkedBlockingQueue<>(5000);
     private Set<String> stopWords = new HashSet<>();
     public  String[] allTokens ;
     private int index ;
@@ -45,16 +45,16 @@ public class Parse extends Thread {
 
         while (!ReadFile.stopParser || (ReadFile.stopParser && !documentsSet.isEmpty())) {
 
-            if(!documentsSet.isEmpty() && (documentsSet.size() >= 500 || ReadFile.stopParser)) {
+            if(!documentsSet.isEmpty() && (documentsSet.size() >= 5000 || ReadFile.stopParser)) {
 
                 Queue<Document> queueOfDoc =new LinkedList<>();
-                documentsSet.drainTo(queueOfDoc,500);
+                documentsSet.drainTo(queueOfDoc,5000);
                 while (!queueOfDoc.isEmpty()) {
                         newDoc = queueOfDoc.poll();
                         docName = newDoc.getId();
                         System.out.println(docName + ": Parse");
 
-                        allTokens = newDoc.getText().split("(?!,[0-9])[\",\\/?@!\\[\\]:;*#'+)_(\\s]+");
+                        allTokens = newDoc.getText().split("(?!,[0-9])[\",\\/?@!\\[\\]:;*&=#'+)_(\\s]+");
 
                         index = 0;
 
@@ -96,14 +96,14 @@ public class Parse extends Thread {
                         newDoc.clear();
 
                 try {
-
-                    //Indexer.currChunk.add(newDoc);
-
+                    Indexer.currChunk.put(newDoc);
                 }
                 catch (IllegalStateException e ){
                     e.printStackTrace();
                 }
-
+                catch (InterruptedException i) {
+                    //
+                }
                         allTokens = null;
                 }
             }
