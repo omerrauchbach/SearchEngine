@@ -46,6 +46,7 @@ public class Parse extends Thread {
         while (!ReadFile.stopParser || (ReadFile.stopParser && !documentsSet.isEmpty())) {
 
             if(!documentsSet.isEmpty() && (documentsSet.size()>= 5000 || ReadFile.stopParser)) {
+
                 Queue<Document> queueOfDoc =new LinkedList<>();
                 documentsSet.drainTo(queueOfDoc,5000);
                 while (!queueOfDoc.isEmpty()) {
