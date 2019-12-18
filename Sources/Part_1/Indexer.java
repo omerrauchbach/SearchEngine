@@ -23,9 +23,9 @@ public class Indexer extends Thread {
     private HashMap<String, int[]> currDocDic = new HashMap<>();
     private String FILE_PATH = "";
     public static String filePath = ""; //get it from parse. !
-    private int indexPosting = 1;
 
-    public static BlockingQueue<Document> currChunk = new LinkedBlockingQueue<>(500);
+
+    public static BlockingQueue<Document> currChunk = new LinkedBlockingQueue<>(5000);
     private TreeMap<String, int[]> littleDic;
     private int currPostingFileIndex = 1;
     private int counterPostingFiles = 1;
@@ -79,9 +79,9 @@ public class Indexer extends Thread {
 
         while(!Parse.stopIndexer || (Parse.stopIndexer && !currChunk.isEmpty())){
 
-            if(!currChunk.isEmpty() && (currChunk.size()>= 500 || Parse.stopIndexer)) {
+            if(!currChunk.isEmpty() && (currChunk.size()>= 5000 || Parse.stopIndexer)) {
                 Queue<Document> queueOfDoc =new LinkedList<>();
-                currChunk.drainTo(queueOfDoc,500);
+                currChunk.drainTo(queueOfDoc,5000);
                 HashMap<String , int[]> tmpDicDoc = new HashMap<>();
                 filePath = userFilePath+"\\posting" + currPostingFileIndex + ".txt";
 
@@ -111,7 +111,6 @@ public class Indexer extends Thread {
                     docInfo[1] = currDoc.uniqueTerm(); //how many unique terms.
                     docInfo[2] = currDoc.getLength();
                     tmpDicDoc.put(currDoc.getId(), docInfo); //adds current doc to docs dic.
-                    currDoc = queueOfDoc.poll();
                     allDocuments.put(currDoc.getId(), docInfo); //adds current doc to docs dic.
 
 
@@ -181,7 +180,7 @@ public class Indexer extends Thread {
 
         } //nothing left to index. // one merged posting file::
 
-        createDic(); //most important part.
+
     }
 
     private void updateTermDic(){
@@ -204,6 +203,7 @@ public class Indexer extends Thread {
 
         }
     }
+
     private void createPostingFile(String path , HashMap<String,String> ChunkTermDicDocs){
 
         try {
@@ -310,60 +310,6 @@ public class Indexer extends Thread {
         }
     }
 
-    private void createDic (){ //create the final dic. at the end.
-
-        termDic = new HashMap<>();
-        int[] valuesForTerm = new int [3];
-        FILE_PATH = filePath + "\\out\\posting" + currPostingFileIndex + ".txt"; // final file.
-        try{
-            Scanner textScan = new Scanner(new File(FILE_PATH)); //only one merged posting file ! with all terms !
-            int lineIndex = 0;
-            int df ;
-            int totalShows;
-            String[] allData;
-            String term = "";
-            boolean newTerm;
-
-            while (textScan.hasNextLine()) {
-                newTerm = true;
-                lineIndex++;
-                String str = textScan.nextLine();
-                df = 0;
-                totalShows = 0;
-
-                while (str != null && str.length()>0) {
-                    //alldata = new String[str.length()]; /////////// ????????????????????
-                    allData = str.split(":|\\;|\\|");
-
-                    if (newTerm) { //only start of reading line. removes term itself ! (index 0 )
-                        term = allData[0];
-                        str = str.substring(str.indexOf("|") + 1);
-                        newTerm = false;
-                    }
-                    while (str != null) { //one more doc to add.
-                        allData = str.split(":|\\;|\\|"); //line without term itself.
-                        df++;
-                        totalShows = totalShows + Integer.parseInt(allData[1]); //adds #appearences in each doc.
-
-                        if (str.indexOf("|") == -1) {
-                            str = null;
-                            break;
-                        }
-                        str = str.substring(str.indexOf("|") + 1); //shortens the line, reads next doc info.
-
-                    }
-                } //end of line.
-                valuesForTerm[0] = df;
-                valuesForTerm[1] = totalShows;
-                valuesForTerm[2] = lineIndex;
-
-                termDic.put(term,valuesForTerm); //adds term and values to big dic.
-            }
-        } catch (IOException ex) {
-            // Report
-        }
-    }
-
     private TreeMap<String , int[]> newTree(){
 
         return new TreeMap<>(new Comparator<String>(){
@@ -378,92 +324,6 @@ public class Indexer extends Thread {
         });
     }
 
-    public void test (){
-//        /*Queue<Document> docs = new LinkedList<Document>();
-//        HashMap<String, int[]> tDic = new HashMap<>();
-//
-//        Document d1 = new Document();
-//        Document d2 = new Document();
-//        Document d3 = new Document();
-//
-//        int[] test = new int[3];
-//        test[0] = 1;
-//        test[1] = 0;
-//        test[2] = 2;
-//
-//        StringBuilder sb = new StringBuilder();
-//        tDic.put("Abba", test);
-//
-//        int[] test2 = new int[3];
-//        test2[0] = 4;
-//        test2[1] = 0;
-//        test2[2] = 2;
-//
-//        tDic.put("Ima",test2);
-//
-//        d1.setId("FB396005");
-//        d1.setText(sb);
-//        d1.setTfMax(9);
-//        d1.setTermDic(tDic);
-//
-//        StringBuilder sb2 = new StringBuilder();
-//        HashMap<String, int[]> tDic2 = new HashMap<>();
-//
-//        tDic2.put("Ima" , test);
-//        tDic2.put("Abba", test);
-//        tDic2.put("Tomer", test);
-//
-//        d2.setId("SW396938");
-//        d2.setText(sb2);
-//        d2.setTfMax(5);
-//        d2.setTermDic(tDic2);
-//
-//        StringBuilder sb3 = new StringBuilder();
-//        HashMap<String, int[]> tDic3 = new HashMap<>();
-//
-//        tDic3.put("Tomer" , test);
-//        tDic3.put("Abba", test);
-//        tDic3.put("Tomer", test);
-//
-//        d3.setId("TA834655");
-//        d3.setText(sb3);
-//        d3.setTfMax(2);
-//        d3.setTermDic(tDic3);
-//
-//        docs.add(d1);
-//        docs.add(d2);
-//        docs.add(d3);
-//
-//
-
-        //   termDic.put("Abba", test);
-        //   termDic.put("Ima", test);
-        //  termDic.put("tomer", test);
-        // termDic.put("Tomer", test);
-
-        //allTermsDF.put("Ima", 3);
-        // allTermsDF.put("Abba", 4);
-        // allTermsDF.put("Tomer", 1);
-
-        Queue<String> allDocs = new LinkedList<>();
-        ((LinkedList<String>) allDocs).add(0, "d1");
-        ((LinkedList<String>) allDocs).add(1, "d2");
-        ((LinkedList<String>) allDocs).add(2, "d3");
-
-        //   allTermsInDocs.put("Ima", allDocs);
-        //   Queue<String> allDocs2 = new LinkedList<>();
-        //   ((LinkedList<String>) allDocs2).add(0, "d1");
-        //  ((LinkedList<String>) allDocs2).add(1, "d2");
-
-        // ((LinkedList<String>) allDocs2).add(2, "d3");
-        //  ((LinkedList<String>) allDocs2).add(3, "d4");
-        //  allTermsInDocs.put("Abba", allDocs2);
-
-
-
-        //indexAll(docs);
-    }
-
     public void start (){ indexAll();}
 
 
@@ -476,8 +336,7 @@ public class Indexer extends Thread {
         indexAll();
     }
 
-    public void test33 (){ mergePosting();}
-    public void test44 () {createDic();}
+
 
 
 }
