@@ -45,15 +45,16 @@ public class Parse extends Thread {
 
         while (!ReadFile.stopParser || (ReadFile.stopParser && !documentsSet.isEmpty())) {
 
-            if(!documentsSet.isEmpty() && (documentsSet.size()== 500 || ReadFile.stopParser)) {
+            if(!documentsSet.isEmpty() && (documentsSet.size() >= 500 || ReadFile.stopParser)) {
                 Queue<Document> queueOfDoc =new LinkedList<>();
                 documentsSet.drainTo(queueOfDoc,500);
                 while (!queueOfDoc.isEmpty()) {
                         newDoc = queueOfDoc.poll();
                         docName = newDoc.getId();
                         System.out.println(docName + ": Parse");
-                        allTokens = newDoc.getText().split("(?!,[0-9])[(--)\",\\/?@!\\[\\]:;*#'+)_(\\s]+");
+                        allTokens = newDoc.getText().split("(?!,[0-9])[\",\\/?@!\\[\\]:;*#'+)_(\\s]+");
                         index = 0;
+
                         try {
                             while (index < allTokens.length) {
                                 currToken = allTokens[index].trim();
@@ -92,22 +93,15 @@ public class Parse extends Thread {
                         newDoc.clear();
 
                 try {
-                    Indexer.currChunk.add(newDoc);
+                    //Indexer.currChunk.add(newDoc);
                 }
                 catch (IllegalStateException e ){
                     e.printStackTrace();
                 }
-
-
                         allTokens = null;
-
-
                 }
             }
-
         }
-
-
     }
 
     private void insertFirstOccur(String term){
@@ -136,7 +130,6 @@ public class Parse extends Thread {
                 //System.out.println(term + "," + newData[0]+","+docName);
             }
         }
-
     }
 
     private void changeUpperCaseToLowerCase(String term){
@@ -148,7 +141,6 @@ public class Parse extends Thread {
             newDoc.termDic.put(term , newData);
             //System.out.println(term + "," + newData[0]);
         }
-
     }
 
     private String numericToPrice(String num ,String sum,String fraction ,boolean sign, boolean Dollars , boolean US ){
@@ -169,7 +161,6 @@ public class Parse extends Thread {
                price = new BigDecimal(price).movePointRight(3).toString(); //adds 3 zeroes. B ==> M.
            else if (sum.equals("trillion"))
                price = new BigDecimal(price).movePointRight(6).toString(); //adds 6 ??? zeroes. T ==> M.
-
 
             price = price+" M Dollars";
         }
@@ -211,15 +202,6 @@ public class Parse extends Thread {
         }
     }
 
-    private boolean isNumericInt(String docToken){
-        try {
-
-            Integer.parseInt(docToken.replace(",",""));
-            return true;
-        } catch(NumberFormatException e){
-            return false;
-        }
-    }
 
     private boolean isFraction (String docToken){ //checks if the token is a number with a fraction
        if (docToken.contains("/"))
@@ -301,17 +283,8 @@ public class Parse extends Thread {
                 e.printStackTrace();
                 return numToken;
             }
-            /*
-            int charIndex = numToken.indexOf('.')+4;
-            if(charIndex > numToken.length())
-                return numToken;
-            else
-                return numToken.substring(0,charIndex);
-                */
-
         }else
             return numToken;
-
     }
 
     /**
@@ -342,22 +315,6 @@ public class Parse extends Thread {
                 ans = firstPart+"."+secoendPart;
             }
 
-
-            /*
-            if(charIndex >4){
-                ans = numToken.replace("." , "");
-                ans = ans.substring(0,charIndex-shift)+"."+ans.substring(charIndex-shift);
-                return ans;
-            }else
-                return numToken;
-
-                ///////////////////////////
-                 ans = numToken.replace("." , "");
-            ans = ans.substring(0,charIndex-shift)+"."+ans.substring(charIndex-shift);
-            charIndex = ans.indexOf('.');
-            if(ans.length() - charIndex > 3){
-                ans = ans.substring(0,charIndex+4);
-                */
         }else{
             if(numToken.length()>3) {
                 charIndex = numToken.length() - shift;
@@ -368,10 +325,8 @@ public class Parse extends Thread {
                 return ans;
             }else
                 return numToken;
-
         }
         return ans;
-
     }
 
     private String deleteZeroFromEnd(String num){
@@ -386,7 +341,6 @@ public class Parse extends Thread {
                 }else{
                     return ans;
                 }
-
             }
             return ans;
         }else
@@ -489,39 +443,29 @@ public class Parse extends Thread {
 
     private String startEndWord(String word){
 
-        boolean twoLetters = word.length()<3;
-        boolean countainStopChar =false;
         if(word.equals("U.S."))
             return word;
 
-        for(int startindex =0 ; startindex  < word.length()-1 ; startindex ++){
+        for(int startindex =0 ; startindex  < word.length() ; startindex ++){
             if(word.charAt(0 ) == '.' ||  word.charAt(0) == ',' || word.charAt(0 ) == '-' ||word.charAt(0 ) == '\'') {
                 word = word.substring(1);
-                countainStopChar = true;
             }
             else
                 break;
         }
 
-        for(int endIndex =word.length()-1 ; endIndex  >= 1 ; endIndex --){
+
+
+
+
+        for(int endIndex = word.length()-1 ; endIndex  >= 1 ; endIndex --){
             if(word.charAt(word.length()-1 ) == '.' ||  word.charAt(word.length()-1) == ',' || word.charAt(word.length()-1 ) == '-'|| word.charAt(word.length()-1 ) == '\'' ) {
                 word = word.substring(0,word.length()-1);
-                countainStopChar = true;
             }
             else
                 break;
         }
-        /*
-        ////first char
-        if(word.charAt(0) == '.' || word.charAt(0) == ':' || word.charAt(0) == ','  || word.charAt(0) == '-' || word.charAt(0) == '*') {
-            word = word.substring(1);
-            countainStopChar = true;
-        }
-        if(word.length()>0&&(word.charAt(word.length()-1) == '.' || word.charAt(word.length()-1) ==':' || word.charAt(word.length()-1) == ',' || word.charAt(word.length()-1) == '-')) {
-            word = word.substring(0, word.length() - 1);
-            countainStopChar = true;
-        }
-        */
+
         if(word.length() == 1)
             return "";
         return word;
@@ -548,11 +492,9 @@ public class Parse extends Thread {
 
                 }
                 else{
-
                     //first occur
                     insertFirstOccur(word);
                 }
-
             }
             ///check if the word is all in upper letter.
             else if (word.equals(word.toUpperCase())){
@@ -668,7 +610,7 @@ public class Parse extends Thread {
         }else if(date.length() == 2){ // 14 MAY
             String year = startEndWord(allTokens[index+2]);
             if(year.length()== 4 && isNumericDate(allTokens[index+2])) {
-                insertTermDic(turnMonthToNumber(num) + "-" + date + "-" + year);
+                insertTermDic(year + "-" + turnMonthToNumber(num) + "-" + date);
                 index++;
             }else
                 insertTermDic(turnMonthToNumber(num)+"-"+date);
@@ -716,9 +658,7 @@ public class Parse extends Thread {
 
             } else {
                 num = intNum;
-
             }
-
         }
         else if (isThousand(intNum) || sum.equals("K")) {//only 100,123 (K)
              num = shiftLeft(returnDouble(intNum), 3)+"K";
@@ -734,17 +674,14 @@ public class Parse extends Thread {
         if(!num.equals(""))
             insertTermDic(num);
 
-
         if(sum.equals(""))
             index++;
         else
             index = index+2;
 
-
     }
 
     private void handleLine(String line){
-
 
         String[] lines = line.split("-");
         if(lines == null || lines.length<2)
@@ -755,13 +692,13 @@ public class Parse extends Thread {
                 int SecondNumDate =Integer.parseInt(lines[1]);
                 if(firstNumDate >0 && firstNumDate <32 && SecondNumDate > 0 && SecondNumDate <32 && isMonths(allTokens[index+1])) {
                     if(lines[0].length() == 1)
-                        insertTermDic("0"+lines[0] + "/" + turnMonthToNumber(allTokens[index + 1]));
+                        insertTermDic(turnMonthToNumber(allTokens[index + 1]) + "-0"+lines[0]);
                     else
-                        insertTermDic(lines[0] + "/" + turnMonthToNumber(allTokens[index + 1]));
+                        insertTermDic(turnMonthToNumber(allTokens[index + 1]) + "-" + lines[0]);
                     if(lines[1].length() == 1)
-                        insertTermDic("0"+lines[1] + "/" + turnMonthToNumber(allTokens[index + 1]));
+                        insertTermDic(turnMonthToNumber(allTokens[index + 1]) + "-0"+lines[1]);
                     else
-                        insertTermDic(lines[1] + "/" + turnMonthToNumber(allTokens[index + 1]));
+                        insertTermDic(turnMonthToNumber(allTokens[index + 1]) + "-" + lines[1]);
                     index = index+2;
                 }else{
                     insertTermDic(line);
@@ -773,15 +710,10 @@ public class Parse extends Thread {
                 index++;
             }
         }else{
-            insertTermDic(line);
+            insertTermDic(lines[0] + "-" + lines[1]);
             index++;
         }
-        /*
-        if(line.equals("--"))
-            return;
-         */
-
-    }
+   }
 
     private void setStopWord(String path){
 
@@ -804,7 +736,6 @@ public class Parse extends Thread {
             alert.setContentText("Error in folder path");
             alert.show();
         }
-
     }
 
     public static void restart(){
@@ -816,6 +747,3 @@ public class Parse extends Thread {
         parseDocs();
     }
 }
-
-
-
