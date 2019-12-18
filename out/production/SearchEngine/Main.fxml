@@ -15,9 +15,9 @@
         <Button fx:id="start" layoutX="313.0" layoutY="318.0" mnemonicParsing="false" onAction="#onStart" prefHeight="25.0" prefWidth="137.0" text="Start" />
         <Button fx:id="browse_posting" layoutX="442.0" layoutY="124.0" mnemonicParsing="false" onAction="#onBrowseDoc"  text="Browse" />
         <CheckBox fx:id="stemming" layoutX="155.0" layoutY="227.0" mnemonicParsing="false" text="Stemming" />
-        <Button fx:id="restart" layoutX="155.0" layoutY="318.0" mnemonicParsing="false" onAction="#onRestart" prefHeight="25.0" prefWidth="129.0" text="Restart" />
+        <Button fx:id="reset" layoutX="155.0" layoutY="318.0" mnemonicParsing="false" onAction="#onRestart" prefHeight="25.0" prefWidth="129.0" text="Reset" />
         <Button fx:id="displayInv" layoutX="313.0" layoutY="274.0" mnemonicParsing="false" onAction="#onDisplayInv" prefHeight="25.0" prefWidth="137.0" text="Display Inverted Index" />
-        <Button fx:id="loadInv" layoutX="158.0" layoutY="274.0" mnemonicParsing="false" onAction="#onLoadInv" prefHeight="25.0" prefWidth="129.0" text="Load Invereted Index" />
+        <Button fx:id="loadInv" layoutX="158.0" layoutY="274.0" mnemonicParsing="false" onAction="#onLoadInv" prefHeight="25.0" prefWidth="129.0" text="Load Dictionary" />
       <Button fx:id="browse_Doc" layoutX="442.0" layoutY="179.0" mnemonicParsing="false" onAction="#onBrowsePosting" text="Browse" />
     </children>
 </AnchorPane>
