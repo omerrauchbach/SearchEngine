@@ -25,7 +25,7 @@ public class Indexer extends Thread {
     public static String filePath = ""; //get it from parse. !
 
 
-    public static BlockingQueue<Document> currChunk = new LinkedBlockingQueue<>(5000);
+    public static BlockingQueue<Document> currChunk = new LinkedBlockingQueue<>(3000);
     private TreeMap<String, int[]> littleDic;
     private int currPostingFileIndex = 1;
     private int counterPostingFiles = 1;
@@ -79,9 +79,9 @@ public class Indexer extends Thread {
 
         while(!Parse.stopIndexer || (Parse.stopIndexer && !currChunk.isEmpty())){
 
-            if(!currChunk.isEmpty() && (currChunk.size()>= 5000 || Parse.stopIndexer)) {
+            if(!currChunk.isEmpty() && (currChunk.size()>= 3000 || Parse.stopIndexer)) {
                 Queue<Document> queueOfDoc =new LinkedList<>();
-                currChunk.drainTo(queueOfDoc,5000);
+                currChunk.drainTo(queueOfDoc,3000);
                 HashMap<String , int[]> tmpDicDoc = new HashMap<>();
                 filePath = userFilePath+"\\posting" + currPostingFileIndex + ".txt";
 
@@ -251,7 +251,7 @@ public class Indexer extends Thread {
                     } else if (term1.compareTo(term2) > 0) {
                         out.append(line2+"\n");
                         line2 = sc2.nextLine();
-                        term2 = changeToUpperCase(line2.substring(0, line2.indexOf("|"))); // only term itself, with no other data.
+                        term2 = line2.substring(0, line2.indexOf("|")); // only term itself, with no other data.
 
                     }
                     else { //same term ! // adds both list of docs and data.
@@ -259,7 +259,7 @@ public class Indexer extends Thread {
                         line1 = sc1.nextLine();
                         line2 = sc2.nextLine();
                         term1 = changeToUpperCase( line1.substring(0, line1.indexOf("|"))); // only term itself, with no other data.
-                        term2 = changeToUpperCase(line2.substring(0, line2.indexOf("|"))); // only term itself, with no other data.
+                        term2 =line2.substring(0, line2.indexOf("|")); // only term itself, with no other data.
                     }
                 }
                 while (sc1.hasNextLine()) { //adds only terms from 1.

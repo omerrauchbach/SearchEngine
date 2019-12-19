@@ -29,11 +29,18 @@ public class Main extends Application {
     @Override
     public void start(Stage primaryStage) throws Exception {
 
+        DecimalFormat df = new DecimalFormat("#.###");
+        df.setRoundingMode(RoundingMode.CEILING);
+
+        String price = "123456789";
+        System.out.println( df.format(new BigDecimal(price).movePointLeft(5)));
         Parent mainWindow = FXMLLoader.load(getClass().getResource("/Main.fxml"));
         primaryStage.setScene(new Scene(mainWindow , 600, 400));
         primaryStage.show();
     }
 }
+
+
 
 
 /*

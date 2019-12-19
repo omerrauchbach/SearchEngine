@@ -14,7 +14,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 public class Parse extends Thread {
 
-    public static BlockingQueue<Document> documentsSet = new LinkedBlockingQueue<>(5000);
+    public static BlockingQueue<Document> documentsSet = new LinkedBlockingQueue<>(3000);
     private Set<String> stopWords = new HashSet<>();
     public  String[] allTokens ;
     private int index ;
@@ -27,6 +27,7 @@ public class Parse extends Thread {
     private Document newDoc;
     DecimalFormat df = new DecimalFormat("#.###");
     private String termLocationsInDoc = "";
+    private String currTokenStartEnd;
 
 
     public static boolean stopIndexer = false;
@@ -46,32 +47,39 @@ public class Parse extends Thread {
         while (!ReadFile.stopParser || (ReadFile.stopParser && !documentsSet.isEmpty())) {
 
 
-            if(!documentsSet.isEmpty() && (documentsSet.size()>= 5000 || ReadFile.stopParser)) {
+            if(!documentsSet.isEmpty() && (documentsSet.size()>= 3000 || ReadFile.stopParser)) {
                 Queue<Document> queueOfDoc =new LinkedList<>();
-                documentsSet.drainTo(queueOfDoc,5000);
+                documentsSet.drainTo(queueOfDoc,3000);
                 while (!queueOfDoc.isEmpty()) {
                         newDoc = queueOfDoc.poll();
                         docName = newDoc.getId();
                         System.out.println(docName + ": Parse");
 
-                        allTokens = newDoc.getText().split("(?!,[0-9])[\",\\/?@!\\[\\]:;*#'+)_(\\s]+");
+                        allTokens = newDoc.getText().split("(?!,[0-9])[\",\\/?&=@!\\[\\]:;|*#'+)_(\\s]+");
 
                         index = 0;
 
                         try {
                             while (index < allTokens.length) {
                                 currToken = allTokens[index].trim();
-                                if (currToken.equals("") || currToken.length() == 1 || currToken.equals("\n") || stopWord(startEndWord(currToken))) {
+                                currTokenStartEnd = startEndWord(currToken);
+                                if (currToken.equals("") || currToken.length() == 1 || currToken.equals("\n") || stopWord(currTokenStartEnd)) {
                                     if (!currToken.equals("May")) {
                                         index++;
                                         continue;
                                     }
                                 }
 
-                                //===================== price =========================//
-                                if (isDate(currToken)) {
-                                    handleDate(currToken);
-                                    index = index + 2;
+                                if (!currTokenStartEnd.matches(".*\\d.*") && !isMonths(currTokenStartEnd)) {
+                                    if (isLine(currToken)) {
+                                        handleLine(currToken);
+
+                                    } else {
+                                        handleWords(currTokenStartEnd);
+                                    }
+
+                                } else if (isDateTest(currTokenStartEnd)) {
+                                    continue;
                                 } else if (isPrice(currToken)) {
                                     handlePrice(currToken);
                                 } else if (isPercent(currToken)) {
@@ -97,10 +105,13 @@ public class Parse extends Thread {
 
                 try {
 
-                    //Indexer.currChunk.add(newDoc);
+                    Indexer.currChunk.put(newDoc);
 
                 }
                 catch (IllegalStateException e ){
+                    e.printStackTrace();
+                }
+                catch (InterruptedException e){
                     e.printStackTrace();
                 }
 
@@ -114,7 +125,7 @@ public class Parse extends Thread {
     }
 
     private void insertFirstOccur(String term){
-        if(term != null && !term.equals("")) {
+        if(term != null && !term.equals("") && term.length()>1) {
             int[] data = new int[4];
             data[0] = 1;
            //System.out.println(term+","+ data[0]+","+docName);
@@ -126,7 +137,7 @@ public class Parse extends Thread {
 
     private void insertTermDic(String term){
 
-        if(term != null && !term.equals("")) {
+        if(term != null && !term.equals("") && term.length()>1) {
 
             int[] newData = newDoc.termDic.get(term);
             if(newData == null)
@@ -173,11 +184,13 @@ public class Parse extends Thread {
 
             price = price+" M Dollars";
         }
-        //System.out.println(price+","+docName);
+
         return price;
     }
 
     private boolean equalToSum(String word){
+        if(word == null)
+            return false;
         for(String sum : sums ){
             if(sum.equals(word.toLowerCase()))
                 return true;
@@ -198,6 +211,71 @@ public class Parse extends Thread {
         return false;
     }
 
+    private void handlePrice(String currToken ){
+        String price = "";
+        boolean sign ;
+        String[] priceTerms = new String[4];
+        int priceTermIndex = 0;
+        for(int i = index ; i <allTokens.length && i<index+4 ; i++ ){
+            if(allTokens[i].equals("")) {
+                index++;
+                continue;
+            }
+            priceTerms[priceTermIndex] = allTokens[i];
+            priceTermIndex++;
+        }
+        for (int i =0 ; i<priceTerms.length ; i++){
+            if(priceTerms[i] == null)
+                priceTerms[i] = "";
+        }
+
+        if (priceTerms[0] == null){
+            index++;
+            return;
+        }
+
+
+        sign =(priceTerms[0].charAt(0) == '$');
+
+        if(equalToSum(priceTerms[1])){
+            priceTerms[1] = priceTerms[1].toLowerCase();
+            if(priceTerms[1].equals("Dollars")){
+                price = numericToPrice(priceTerms[0],priceTerms[1],"", sign, true , false);
+                index= index+2;
+            }else if(priceTerms[1].equals("million") || priceTerms[1].equals("billion") ||priceTerms[1].equals("trillion") ){
+                if(priceTerms[2].equals("U.S.") && priceTerms[3].equals("dollars")) {
+                    price = numericToPrice(priceTerms[0], priceTerms[1],"",  sign, true, true);
+                    index= index+4;
+                }else { // $100 million
+                    price = numericToPrice(priceTerms[0], priceTerms[1],"",  sign, false, false);
+                    index= index +2;
+                }
+            } else if (priceTerms[1].equals("m") || priceTerms[1].equals("bn")) {
+                if(priceTerms[2].equals("Dollars")) {
+                    price = numericToPrice(priceTerms[0], priceTerms[1],"",  sign, true, false);
+                    index= index +3;
+                }else {
+                    price = numericToPrice(priceTerms[0], priceTerms[1],"",  sign, false, false);
+                    index++;
+                }
+            }else if(priceTerms[2].equals("U.S.") && priceTerms[3].equals("dollars")) {
+                //trillion
+                price = numericToPrice(priceTerms[0], priceTerms[1],"",  sign, true, true);
+                index = index + 4;
+            }else if(isFraction(priceTerms[1]) && priceTerms[2].equals("Dollars")){
+                price = numericToPrice(priceTerms[0],"",priceTerms[1],  sign, true , false);
+                index= index + 3;
+            }else{
+                price = numericToPrice(priceTerms[0],"","",  sign, false , false);
+                index++;
+            }
+        }else{
+            price = numericToPrice(priceTerms[0],"","",  sign, false , false);
+            index++;
+        }
+        insertTermDic(price);
+    }
+
     private boolean isNumericDouble (String docToken){ //checks if the token is a number
 
         try {
@@ -210,7 +288,6 @@ public class Parse extends Thread {
             return false;
         }
     }
-
 
     private boolean isFraction (String docToken){ //checks if the token is a number with a fraction
        if (docToken.contains("/"))
@@ -267,14 +344,6 @@ public class Parse extends Thread {
 
     }
 
-    private boolean isLine(String token) {
-
-
-        if(startEndWord(token).contains("-"))
-            return true;
-        return false;
-    }
-
     /**
      *  function that get a number and remove
      *  all number after the 3 char after the "."
@@ -304,38 +373,16 @@ public class Parse extends Thread {
      */
     private String shiftLeft(String numToken ,int shift ){
 
-        String ans = "";
-        int charIndex;
-        if(numToken.contains(".")) {
-            charIndex = numToken.indexOf('.');
-            String firstPart = "";
-            String secoendPart = "";
-            if(charIndex >3){
-                firstPart = numToken.substring(0,3);
-                secoendPart = numToken.substring(3,charIndex)+ numToken.substring(charIndex+1);
-                if(secoendPart.length() > 3)
-                    secoendPart = secoendPart.substring(0,3);
-                ans = firstPart+"."+secoendPart;
-            }else{
-                firstPart = numToken.substring(0,charIndex);
-                secoendPart = numToken.substring(charIndex+1);
-                if(secoendPart.length() > 3)
-                    secoendPart = secoendPart.substring(0,3);
-                ans = firstPart+"."+secoendPart;
-            }
-
-        }else{
-            if(numToken.length()>3) {
-                charIndex = numToken.length() - shift;
-                if(charIndex+3 > numToken.length())
-                    ans = deleteZeroFromEnd(numToken.substring(0, charIndex) + "." + numToken.substring(charIndex));
-                else
-                    ans = deleteZeroFromEnd(numToken.substring(0, charIndex) + "." + numToken.substring(charIndex,charIndex+3));
-                return ans;
-            }else
-                return numToken;
+        /*
+        try {
+            Double.parseDouble(numToken);
         }
-        return ans;
+        catch (Exception e){
+            e.printStackTrace();
+            return numToken;
+        }
+        */
+        return  df.format(new BigDecimal(numToken).movePointLeft(shift));
     }
 
     private String deleteZeroFromEnd(String num){
@@ -357,10 +404,9 @@ public class Parse extends Thread {
     }
 
     private boolean isNumericDate(String numToken){
-        char lastChar = numToken.charAt(numToken.length()-1);
+        if(numToken.length()>4 || numToken.length() <2)
+            return false;
         String numTerm = numToken;
-        if(lastChar == '.')
-            numTerm = numTerm.substring(0,numToken.length()-1);
         try {
             int num = Integer.parseInt(numTerm) ;
             if(numTerm.length() == 2 && num < 32 && num > 0) {
@@ -376,13 +422,69 @@ public class Parse extends Thread {
     private boolean isDate (String docToken){ //checks if the token is a month (date)
 
         if(index+1 < allTokens.length){
-            if((isNumericDate(docToken) && isMonths(allTokens[index+1])) || (isNumericDate(allTokens[index+1]) && isMonths(docToken)))
+            if((isNumericDate(currTokenStartEnd) && isMonths(allTokens[index+1])) || (isNumericDate(allTokens[index+1]) && isMonths(docToken)))
                 return true;
             else
                 return false;
         }
         else
             return false;
+    }
+
+    private boolean isNumericDayDate(String numTerm){
+
+        try {
+            int num = Integer.parseInt(numTerm) ;
+            if(numTerm.length() == 2 && num < 32 && num > 0)
+                return true;
+            else
+                return false;
+        } catch(NumberFormatException e){
+            return false;
+        }
+    }
+
+    private boolean isNumericYearDate(String numTerm){
+
+        try {
+            int num = Integer.parseInt(numTerm) ;
+            if(numTerm.length() == 4 )
+                return true;
+            else
+                return false;
+        } catch(NumberFormatException e){
+            return false;
+        }
+    }
+
+    private boolean isDateTest (String docToken) { //checks if the token is a month (date)
+
+        boolean year = false;
+        String yearTerm = "";
+        if (index + 1 < allTokens.length) {
+            String nextTerm = startEndWord(allTokens[index + 1]);
+            if ((isNumericDayDate(currTokenStartEnd) && isMonths(nextTerm))) {
+                if (index + 2 < allTokens.length) {
+                    yearTerm = startEndWord(allTokens[index + 2]);
+                    if (isNumericYearDate(yearTerm))
+                        year = true;
+                }
+                if (year) { //20 june 1984
+                    insertTermDic(turnMonthToNumber(nextTerm) + "-" + currTokenStartEnd + "-" + yearTerm);
+                    index++;
+                } else  ///20 June
+                    insertTermDic(turnMonthToNumber(nextTerm) + "-" + currTokenStartEnd);
+                index = index + 2;
+                return true;
+            } else if ((isNumericDate(nextTerm) && isMonths(docToken))) {
+                ///June 4 or May 1994
+                insertTermDic(turnMonthToNumber(currTokenStartEnd) + "-" + nextTerm);
+                index = index + 2;
+                return true;
+            }
+        } else
+            return false;
+        return false;
     }
 
     private boolean isPercent(String term){
@@ -455,8 +557,9 @@ public class Parse extends Thread {
         if(word.equals("U.S."))
             return word;
 
-        for(int startindex =0 ; startindex  < word.length() ; startindex ++){
 
+        int size = word.length();
+        for(int startindex =0 ; startindex  < size ; startindex ++){
             if(word.charAt(0 ) == '.' ||  word.charAt(0) == ',' || word.charAt(0 ) == '-' ||word.charAt(0 ) == '\'' ) {
                 word = word.substring(1);
             }
@@ -482,11 +585,12 @@ public class Parse extends Thread {
     }
 
     private void handleWords(String word){
-
+        word = currTokenStartEnd;
+        word.replace("%" ,"");
         if(iSstemmer)
-            word = stemmer.getStermTerm(startEndWord(word));
-        else
-            word = startEndWord(word);
+            word = stemmer.getStermTerm(currTokenStartEnd);
+
+
 
         if(word != null && word.length() > 1) {
             /// check if word is in lower letters
@@ -532,71 +636,6 @@ public class Parse extends Thread {
             return;
         }
         index++;
-    }
-
-    private void handlePrice(String currToken ){
-        String price = "";
-        boolean sign = currToken.charAt(0) == '$';
-        String[] priceTerms = new String[4];
-        int priceTermIndex = 0;
-        for(int i = index ; i <allTokens.length && i<index+4 ; i++ ){
-            if(allTokens[i].equals("")) {
-                index++;
-                continue;
-            }
-            priceTerms[priceTermIndex] = allTokens[i];
-            priceTermIndex++;
-        }
-        for(String priceTerm : priceTerms){
-            if(priceTerm == null)
-                priceTerm = "";
-        }
-
-        if (priceTerms[0] == null){
-            index++;
-            return;
-        }
-
-
-        sign =(priceTerms[0].charAt(0) == '$');
-
-        if(equalToSum(priceTerms[1])){
-            priceTerms[1] = priceTerms[1].toLowerCase();
-            if(priceTerms[1].equals("Dollars")){
-                price = numericToPrice(priceTerms[0],priceTerms[1],"", sign, true , false);
-                index= index+2;
-            }else if(priceTerms[1].equals("million") || priceTerms[1].equals("billion") ||priceTerms[1].equals("trillion") ){
-                if(priceTerms[2].equals("U.S.") && priceTerms[3].equals("dollars")) {
-                    price = numericToPrice(priceTerms[0], priceTerms[1],"",  sign, true, true);
-                    index= index+4;
-                }else { // $100 million
-                    price = numericToPrice(priceTerms[0], priceTerms[1],"",  sign, false, false);
-                    index= index +2;
-                }
-            } else if (priceTerms[1].equals("m") || priceTerms[1].equals("bn")) {
-                if(priceTerms[2].equals("Dollars")) {
-                    price = numericToPrice(priceTerms[0], priceTerms[1],"",  sign, true, false);
-                    index= index +3;
-                }else {
-                    price = numericToPrice(priceTerms[0], priceTerms[1],"",  sign, false, false);
-                    index++;
-                }
-            }else if(priceTerms[2].equals("U.S.") && priceTerms[3].equals("dollars")) {
-                //trillion
-                price = numericToPrice(priceTerms[0], priceTerms[1],"",  sign, true, true);
-                index = index + 4;
-            }else if(isFraction(priceTerms[1]) && priceTerms[2].equals("Dollars")){
-                price = numericToPrice(priceTerms[0],"",priceTerms[1],  sign, true , false);
-                index= index + 3;
-            }else{
-                price = numericToPrice(priceTerms[0],"","",  sign, false , false);
-                index++;
-            }
-        }else{
-            price = numericToPrice(priceTerms[0],"","",  sign, false , false);
-            index++;
-        }
-        insertTermDic(price);
     }
 
     private void handleDate(String date){
@@ -691,6 +730,14 @@ public class Parse extends Thread {
 
     }
 
+    private boolean isLine(String token) {
+
+
+        if(currTokenStartEnd.contains("-"))
+            return true;
+        return false;
+    }
+
     private void handleLine(String line){
 
         String[] lines = line.split("-");
@@ -698,6 +745,8 @@ public class Parse extends Thread {
             return;
         else if(lines.length == 2 && index < allTokens.length-1){
             try{ /// 23-27 Feb
+                lines[0]= startEndWord(lines[0]);
+                lines[1]= startEndWord(lines[1]);
                 int firstNumDate = Integer.parseInt(lines[0]);
                 int SecondNumDate =Integer.parseInt(lines[1]);
                 if(firstNumDate >0 && firstNumDate <32 && SecondNumDate > 0 && SecondNumDate <32 && isMonths(allTokens[index+1])) {
@@ -713,16 +762,49 @@ public class Parse extends Thread {
 
                     index = index+2;
                 }else{
-                    insertTermDic(line);
+                    String addWords = "";
+                    int counter = 0;
+                    for(String term: lines){
+                        term = startEndWord(term);
+                        if(!term.equals(""))
+                            if(counter == 0) {
+                                addWords = term;
+                                counter++;
+                            }else
+                                addWords = addWords+"-"+term;
+                    }
+                    insertTermDic(addWords);
                     index++;
                 }
             }
             catch (Exception e){
-                insertTermDic(line);
+                String addWords = "";
+                int counter = 0;
+                for(String term: lines){
+                    term = startEndWord(term);
+                    if(!term.equals(""))
+                        if(counter == 0) {
+                            addWords = term;
+                            counter++;
+                        }else
+                            addWords = addWords+"-"+term;
+                }
+                insertTermDic(addWords);
                 index++;
             }
         }else{
-            insertTermDic(lines[0] + "-" + lines[1]);
+            String addWords = "";
+            int counter = 0;
+            for(String term: lines){
+                term = startEndWord(term);
+                if(!term.equals(""))
+                    if(counter == 0) {
+                        addWords = term;
+                        counter++;
+                    }else
+                        addWords = addWords+"-"+term;
+            }
+            insertTermDic(addWords);
             index++;
         }
    }
