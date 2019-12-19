@@ -24,7 +24,8 @@ public class Indexer extends Thread {
     private String FILE_PATH = "";
     public static String filePath = ""; //get it from parse. !
 
-    public static BlockingQueue<Document> currChunk = new LinkedBlockingQueue<>(5000);
+
+    public static BlockingQueue<Document> currChunk = new LinkedBlockingQueue<>(3000);
     private TreeMap<String, int[]> littleDic;
     private int currPostingFileIndex = 1;
     private int counterPostingFiles = 1;
@@ -37,9 +38,10 @@ public class Indexer extends Thread {
         userFilePath = postingPath;
 
         if(stemming)
-            FILE_PATH = postingPath+"\\stemming.txt";
+            FILE_PATH = postingPath+"\\stemmig.txt";
         else
-            FILE_PATH = postingPath+"\\nonStemming.txt";
+            FILE_PATH = postingPath+"\\nonStemmig.txt";
+
 
         if(Files.exists(Paths.get(FILE_PATH))) {
             try {
@@ -74,9 +76,9 @@ public class Indexer extends Thread {
 
         while(!Parse.stopIndexer || (Parse.stopIndexer && !currChunk.isEmpty())){
 
-            if(!currChunk.isEmpty() && (currChunk.size()>= 5000 || Parse.stopIndexer)) {
+            if(!currChunk.isEmpty() && (currChunk.size()>= 3000 || Parse.stopIndexer)) {
                 Queue<Document> queueOfDoc =new LinkedList<>();
-                currChunk.drainTo(queueOfDoc,5000);
+                currChunk.drainTo(queueOfDoc,3000);
                 HashMap<String , int[]> tmpDicDoc = new HashMap<>();
                 filePath = userFilePath+"\\posting" + currPostingFileIndex + ".txt";
 
@@ -94,7 +96,6 @@ public class Indexer extends Thread {
                 HashMap<String, String> ChunkTermDicDocs = new HashMap<>();
                 changeUpperCase = new HashMap<>();
 
-
                 while (!queueOfDoc.isEmpty()) {
 
                     Document currDoc = queueOfDoc.poll();
@@ -107,7 +108,6 @@ public class Indexer extends Thread {
                     docInfo[2] = currDoc.getLength();
                     tmpDicDoc.put(currDoc.getId(), docInfo); //adds current doc to docs dic.
                     allDocuments.put(currDoc.getId(), docInfo); //adds current doc to docs dic.
-
 
                     for (Map.Entry<String, int[]> entry : currDoc.termDic.entrySet()) {
 
@@ -129,6 +129,7 @@ public class Indexer extends Thread {
                             }
                         }
 
+
                         if (littleDic.containsKey(key)) {
 
                             int[] savedTermData = littleDic.get(key);
@@ -141,16 +142,16 @@ public class Indexer extends Thread {
                             allInfoOfTermForPosting = ChunkTermDicDocs.get(key) + "|" + currDoc.getId() + ":" + currTermInfo[0] + ";" + currDoc.getPlaces(key);
                             ChunkTermDicDocs.replace(key, allInfoOfTermForPosting); // updates info for posting.
 
-                            } else { //first time of this term in chunk.
+                        } else { //first time of this term in chunk.
 
-                                int[] termInfo = new int[3];
-                                termInfo[0] = 1; // first doc in list
-                                termInfo[1] = currTermInfo[0]; //num of appearances in specific doc. !!!
-                                littleDic.put(key, termInfo); //first doc in list, for posting!
-                                allInfoOfTermForPosting = currDoc.getId() + ":" + termInfo[1] + ";" + currDoc.getPlaces(key);
-                                ChunkTermDicDocs.put(key, allInfoOfTermForPosting); //info for posting.
-                            }
+                            int[] termInfo = new int[3];
+                            termInfo[0] = 1; // first doc in list
+                            termInfo[1] = currTermInfo[0]; //num of appearances in specific doc. !!!
+                            littleDic.put(key, termInfo); //first doc in list, for posting!
+                            allInfoOfTermForPosting = currDoc.getId() + ":" + termInfo[1] + ";" + currDoc.getPlaces(key);
+                            ChunkTermDicDocs.put(key, allInfoOfTermForPosting); //info for posting.
                         }
+                    }
 
                     if (queueOfDoc.isEmpty()) {
                         updateTermDic();
@@ -158,6 +159,7 @@ public class Indexer extends Thread {
                         currPostingFileIndex++;
                         if(currPostingFileIndex > 2)
                             mergePosting();
+
                     }
                 }
             }
@@ -181,7 +183,6 @@ public class Indexer extends Thread {
             }else{
                 termDic.put(key ,value);
             }
-
         }
     }
 
@@ -202,60 +203,61 @@ public class Indexer extends Thread {
 
     private void mergePosting () {
 
+
         String line1 = "";
         String line2 = "";
         String term1 ="";
         String term2 = "";
-            try {
-                int oldPostingIndex = currPostingFileIndex-1;
-                int olderPostingIndex = currPostingFileIndex-2;
+        try {
+            int oldPostingIndex = currPostingFileIndex-1;
+            int olderPostingIndex = currPostingFileIndex-2;
 
-                Scanner sc1 = new Scanner((new File(userFilePath+"\\posting" + olderPostingIndex + ".txt")));
-                Scanner sc2 = new Scanner((new File(userFilePath+ "\\posting" + oldPostingIndex + ".txt")));
-                File newPostFile = new File(userFilePath+"\\posting" + currPostingFileIndex + ".txt");
-                PrintWriter out = new PrintWriter(new FileWriter(newPostFile, true));
-                line1 = sc1.nextLine();
-                line2 = sc2.nextLine();
-                term1 = changeToUpperCase(line1.substring(0, line1.indexOf("|"))); // only term itself, with no other data.
-                term2 = changeToUpperCase(line2.substring(0, line2.indexOf("|"))); // only term itself, with no other data.
+            Scanner sc1 = new Scanner((new File(userFilePath+"\\posting" + olderPostingIndex + ".txt")));
+            Scanner sc2 = new Scanner((new File(userFilePath+ "\\posting" + oldPostingIndex + ".txt")));
+            File newPostFile = new File(userFilePath+"\\posting" + currPostingFileIndex + ".txt");
+            PrintWriter out = new PrintWriter(new FileWriter(newPostFile, true));
+            line1 = sc1.nextLine();
+            line2 = sc2.nextLine();
+            term1 = changeToUpperCase(line1.substring(0, line1.indexOf("|"))); // only term itself, with no other data.
+            term2 = changeToUpperCase(line2.substring(0, line2.indexOf("|"))); // only term itself, with no other data.
 
-                while (sc1.hasNextLine() && sc2.hasNextLine()) {
-                    if (term1.compareTo(term2) < 0) { //term1 is first in dic.
-                        out.append(line1+ "\n");
-                        line1 = sc1.nextLine();
-                        term1 =changeToUpperCase( line1.substring(0, line1.indexOf("|"))); // only term itself, with no other data.
-
-                    } else if (term1.compareTo(term2) > 0) {
-                        out.append(line2+"\n");
-                        line2 = sc2.nextLine();
-                        term2 = changeToUpperCase(line2.substring(0, line2.indexOf("|"))); // only term itself, with no other data.
-
-                    }
-                    else { //same term ! // adds both list of docs and data.
-                        out.append(term1 + line1.substring(line1.indexOf("|")) + line2.substring(line2.indexOf("|")) + "\n");
-                        line1 = sc1.nextLine();
-                        line2 = sc2.nextLine();
-                        term1 = changeToUpperCase( line1.substring(0, line1.indexOf("|"))); // only term itself, with no other data.
-                        term2 = changeToUpperCase(line2.substring(0, line2.indexOf("|"))); // only term itself, with no other data.
-                    }
-                }
-                while (sc1.hasNextLine()) { //adds only terms from 1.
+            while (sc1.hasNextLine() && sc2.hasNextLine()) {
+                if (term1.compareTo(term2) < 0) { //term1 is first in dic.
+                    out.append(line1+ "\n");
                     line1 = sc1.nextLine();
-                    out.append(line1 + "\n");
-                }
-                while (sc2.hasNextLine()) { //adds only terms from 2.
+                    term1 =changeToUpperCase( line1.substring(0, line1.indexOf("|"))); // only term itself, with no other data.
+
+                } else if (term1.compareTo(term2) > 0) {
+                    out.append(line2+"\n");
                     line2 = sc2.nextLine();
-                    out.append(line2 + "\n");
+                    term2 = line2.substring(0, line2.indexOf("|")); // only term itself, with no other data.
+
                 }
-                sc1.close();
-                sc2.close();
-                out.close();
-
-            } catch (IOException ex) {
-                // Report
-            } catch (StringIndexOutOfBoundsException e){
-
+                else { //same term ! // adds both list of docs and data.
+                    out.append(term1 + line1.substring(line1.indexOf("|")) + line2.substring(line2.indexOf("|")) + "\n");
+                    line1 = sc1.nextLine();
+                    line2 = sc2.nextLine();
+                    term1 = changeToUpperCase( line1.substring(0, line1.indexOf("|"))); // only term itself, with no other data.
+                    term2 =line2.substring(0, line2.indexOf("|")); // only term itself, with no other data.
+                }
             }
+            while (sc1.hasNextLine()) { //adds only terms from 1.
+                line1 = sc1.nextLine();
+                out.append(line1 + "\n");
+            }
+            while (sc2.hasNextLine()) { //adds only terms from 2.
+                line2 = sc2.nextLine();
+                out.append(line2 + "\n");
+            }
+            sc1.close();
+            sc2.close();
+            out.close();
+
+        } catch (IOException ex) {
+            // Report
+        } catch (StringIndexOutOfBoundsException e){
+
+        }
 
         currPostingFileIndex++;
         deleteTwoTempPosting(currPostingFileIndex-2 ,currPostingFileIndex-3);
@@ -283,6 +285,7 @@ public class Indexer extends Thread {
                     file.delete();
                 }
             }
+
         }
     }
 
