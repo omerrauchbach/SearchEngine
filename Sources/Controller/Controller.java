@@ -268,6 +268,8 @@ public class Controller {
 
 
 
+
+
     private ObservableList<Map.Entry<String, Integer>> getObservableList(){
 
         ObservableList<Map.Entry<String, Integer>> invertedList = FXCollections.observableArrayList();
