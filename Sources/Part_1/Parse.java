@@ -58,7 +58,13 @@ public class Parse extends Thread {
 
                     try {
                         while (index < allTokens.length) {
+
                             currToken = allTokens[index].trim();
+                            if(currToken.matches("[^\u0000-\u007F]+")){
+                                index++;
+                                continue;
+                            }
+
                             currTokenStartEnd = startEndWord(currToken);
                             if (currToken.equals("") || currToken.length() == 1 || currToken.equals("\n") || stopWord(currTokenStartEnd)) {
                                 if (!currToken.equals("May")) {
@@ -75,7 +81,7 @@ public class Parse extends Thread {
                                     handleWords(currTokenStartEnd);
                                 }
 
-                            } else if (isDateTest(currTokenStartEnd)) {
+                            } else if (isDate(currTokenStartEnd)) {
                                 continue;
                             } else if (isPrice(currToken)) {
                                 handlePrice(currToken);
@@ -102,10 +108,10 @@ public class Parse extends Thread {
 
                     try {
 
-                        synchronized(this){
+                        synchronized(currChunk){
                             if(currChunk.remainingCapacity() == 0)
                                 while(!currChunk.isEmpty())
-                                    wait(50);
+                                    currChunk.wait();
                         }
 
                         currChunk.put(newDoc);
@@ -427,7 +433,7 @@ public class Parse extends Thread {
         }
     }
 
-    private boolean isDateTest (String docToken) { //checks if the token is a month (date)
+    private boolean isDate (String docToken) { //checks if the token is a month (date)
 
         boolean year = false;
         String yearTerm = "";
@@ -440,7 +446,7 @@ public class Parse extends Thread {
                         year = true;
                 }
                 if (year) { //20 june 1984
-                    insertTermDic(turnMonthToNumber(nextTerm) + "-" + currTokenStartEnd + "-" + yearTerm);
+                    insertTermDic(yearTerm+"-"+turnMonthToNumber(nextTerm) + "-" + currTokenStartEnd);
                     index++;
                 } else  ///20 June
                     insertTermDic(turnMonthToNumber(nextTerm) + "-" + currTokenStartEnd);
@@ -448,7 +454,10 @@ public class Parse extends Thread {
                 return true;
             } else if ((isNumericDate(nextTerm) && isMonths(docToken))) {
                 ///June 4 or May 1994
-                insertTermDic(turnMonthToNumber(currTokenStartEnd) + "-" + nextTerm);
+                if(nextTerm.length() == 4)
+                    insertTermDic(nextTerm+"-"+turnMonthToNumber(currTokenStartEnd));
+                else
+                    insertTermDic(turnMonthToNumber(currTokenStartEnd)+"-"+nextTerm);
                 index = index + 2;
                 return true;
             }

@@ -25,12 +25,10 @@ public class Document {
     }
 
     public int getTfMax() {
-        return tfMax;
+        return calMaxTf();
     }
 
-    public HashMap<String, int[]> getAllTerms (){ return termDic; }
-
-    public String getText() { return docText.toString(); }
+    public String getText() { return docText; }
 
     public String getPlaces(String term){
 
@@ -61,15 +59,6 @@ public class Document {
         this.docText = text;
     }
 
-    public void setTfMax(int tfMax) {
-        this.tfMax = tfMax;
-    }
-
-    public void setTermDic (HashMap<String, int[]> tDic){
-        termDic = tDic;
-        tfMax = calMaxTf();
-    }
-
     private int calMaxTf(){
 
         int Max =0 ;
@@ -78,7 +67,9 @@ public class Document {
             if(entry.getValue()[0] > Max)
                 Max = entry.getValue()[0];
         }
+        tfMax = Max;
         return Max;
+
     }
 
     public int getLength(){
