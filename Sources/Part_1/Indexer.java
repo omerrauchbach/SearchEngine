@@ -5,15 +5,12 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.util.*;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.stream.Stream;
+
 
 public class Indexer extends Thread {
 
@@ -76,12 +73,17 @@ public class Indexer extends Thread {
 
         while(!Parse.stopIndexer || (Parse.stopIndexer && !Parse.currChunk.isEmpty())){
 
-            if(!Parse.currChunk.isEmpty() && (Parse.currChunk.size()== 2000|| Parse.stopIndexer)) {
+            if(!Parse.currChunk.isEmpty() && (Parse.currChunk.size()>= 2000|| Parse.stopIndexer)) {
 
                 Queue<Document> queueOfDoc = new LinkedList<>();
                 HashMap<String, int[]> tmpDicDoc = new HashMap<>();
                 filePath = userFilePath + "\\posting" + currPostingFileIndex + ".txt";
-                Parse.currChunk.drainTo(queueOfDoc, 2000);
+                synchronized (Parse.currChunk){
+                    Parse.currChunk.drainTo(queueOfDoc, 3000);
+                    Parse.currChunk.notify();
+                }
+
+
 
                 try {
                     File file = new File(filePath);
@@ -99,10 +101,7 @@ public class Indexer extends Thread {
 
                 while (!queueOfDoc.isEmpty()) {
 
-
                     Document currDoc = queueOfDoc.poll();
-                    if(currDoc.getId().equals("FBIS3-2000"))
-                        System.out.println("");
                     System.out.println(currDoc.getId() +":Indexer");
                     int[] docInfo = new int[3];
 
@@ -123,8 +122,6 @@ public class Indexer extends Thread {
                         if(notNum&&!key.chars().anyMatch(Character::isUpperCase) && littleDic.containsKey(key.toUpperCase())){
                                 littleDic.put(key,littleDic.remove(key.toUpperCase()));
                         }
-
-
 
                         if (littleDic.containsKey(key)) {
 
@@ -159,7 +156,7 @@ public class Indexer extends Thread {
                 }
             }else{
                 try {
-                    sleep(50);
+                    sleep(10);
                 }catch (InterruptedException e){
                     e.printStackTrace();
                 }
