@@ -25,7 +25,7 @@ public class Indexer extends Thread {
     public static String filePath = ""; //get it from parse. !
 
 
-    public static BlockingQueue<Document> currChunk = new LinkedBlockingQueue<>(3000);
+
     private TreeMap<String, int[]> littleDic;
     private int currPostingFileIndex = 1;
     private int counterPostingFiles = 1;
@@ -38,9 +38,9 @@ public class Indexer extends Thread {
         userFilePath = postingPath;
 
         if(stemming)
-            FILE_PATH = postingPath+"\\stemmig.txt";
+            FILE_PATH = postingPath+"\\stemming.txt";
         else
-            FILE_PATH = postingPath+"\\nonStemmig.txt";
+            FILE_PATH = postingPath+"\\nonStemming.txt";
 
 
         if(Files.exists(Paths.get(FILE_PATH))) {
@@ -74,13 +74,14 @@ public class Indexer extends Thread {
 
     private void indexAll() {
 
-        while(!Parse.stopIndexer || (Parse.stopIndexer && !currChunk.isEmpty())){
+        while(!Parse.stopIndexer || (Parse.stopIndexer && !Parse.currChunk.isEmpty())){
 
-            if(!currChunk.isEmpty() && (currChunk.size()>= 3000 || Parse.stopIndexer)) {
-                Queue<Document> queueOfDoc =new LinkedList<>();
-                currChunk.drainTo(queueOfDoc,3000);
-                HashMap<String , int[]> tmpDicDoc = new HashMap<>();
-                filePath = userFilePath+"\\posting" + currPostingFileIndex + ".txt";
+            if(!Parse.currChunk.isEmpty() && (Parse.currChunk.size()== 2000|| Parse.stopIndexer)) {
+
+                Queue<Document> queueOfDoc = new LinkedList<>();
+                HashMap<String, int[]> tmpDicDoc = new HashMap<>();
+                filePath = userFilePath + "\\posting" + currPostingFileIndex + ".txt";
+                Parse.currChunk.drainTo(queueOfDoc, 2000);
 
                 try {
                     File file = new File(filePath);
@@ -98,7 +99,10 @@ public class Indexer extends Thread {
 
                 while (!queueOfDoc.isEmpty()) {
 
+
                     Document currDoc = queueOfDoc.poll();
+                    if(currDoc.getId().equals("FBIS3-2000"))
+                        System.out.println("");
                     System.out.println(currDoc.getId() +":Indexer");
                     int[] docInfo = new int[3];
 
@@ -115,28 +119,19 @@ public class Indexer extends Thread {
                         int[] currTermInfo = entry.getValue();
                         String key = entry.getKey();
                         boolean notNum = !key.matches(".*\\d.*");
-                        if(notNum){
-                            boolean upperCase = key.chars().anyMatch(Character::isUpperCase);
-                            if(upperCase&&termDic.containsKey(key.toLowerCase())) /// litDic -> ABBA ,bigDic -> abba
-                                key = key.toLowerCase();
-                            else if(!upperCase && termDic.containsKey(key.toUpperCase())) /// litDic -> abba ,bigDic -> ABBA
-                                termDic.put(key ,termDic.remove(key.toUpperCase()));
-                            changeUpperCase.put(key.toUpperCase() , key);
 
-                            if(!upperCase && littleDic.containsKey(key.toUpperCase())){
-                                int[] sameValue =littleDic.remove(key.toUpperCase());
-                                littleDic.put(key,sameValue);
-                            }
+                        if(notNum&&!key.chars().anyMatch(Character::isUpperCase) && littleDic.containsKey(key.toUpperCase())){
+                                littleDic.put(key,littleDic.remove(key.toUpperCase()));
                         }
+
 
 
                         if (littleDic.containsKey(key)) {
 
                             int[] savedTermData = littleDic.get(key);
-                            int[] updateTermInfo = new int[3];
+                            int[] updateTermInfo = new int[2];
                             updateTermInfo[0] = savedTermData[0] + 1; // adds 1 to curr # of docs
                             updateTermInfo[1] = savedTermData[1] + currTermInfo[0]; //#shows total == adds num of appearences in specific doc. !!!
-                            updateTermInfo[2] = savedTermData[2]; //same line of old term in doc.
                             littleDic.replace(key, updateTermInfo); //replaces values in little dic
 
                             allInfoOfTermForPosting = ChunkTermDicDocs.get(key) + "|" + currDoc.getId() + ":" + currTermInfo[0] + ";" + currDoc.getPlaces(key);
@@ -144,7 +139,7 @@ public class Indexer extends Thread {
 
                         } else { //first time of this term in chunk.
 
-                            int[] termInfo = new int[3];
+                            int[] termInfo = new int[2];
                             termInfo[0] = 1; // first doc in list
                             termInfo[1] = currTermInfo[0]; //num of appearances in specific doc. !!!
                             littleDic.put(key, termInfo); //first doc in list, for posting!
@@ -162,6 +157,12 @@ public class Indexer extends Thread {
 
                     }
                 }
+            }else{
+                try {
+                    sleep(50);
+                }catch (InterruptedException e){
+                    e.printStackTrace();
+                }
             }
         } //nothing left to index. // one merged posting file::
     }
@@ -177,7 +178,6 @@ public class Indexer extends Thread {
                 int[] updateTermInfo = new int[3];
                 updateTermInfo[0] = savedTermData[0] +value[0]; // adds 1 to curr # of docs
                 updateTermInfo[1] = savedTermData[1] + value[1]; //#shows total == adds num of appearences in specific doc. !!!
-                updateTermInfo[2] = savedTermData[2]; //same line of old term in doc.
                 termDic.replace(key,updateTermInfo);
 
             }else{
@@ -212,33 +212,49 @@ public class Indexer extends Thread {
             int oldPostingIndex = currPostingFileIndex-1;
             int olderPostingIndex = currPostingFileIndex-2;
 
-            Scanner sc1 = new Scanner((new File(userFilePath+"\\posting" + olderPostingIndex + ".txt")));
-            Scanner sc2 = new Scanner((new File(userFilePath+ "\\posting" + oldPostingIndex + ".txt")));
-            File newPostFile = new File(userFilePath+"\\posting" + currPostingFileIndex + ".txt");
+            Scanner sc1 = new Scanner((new File(userFilePath+"\\posting" + oldPostingIndex + ".txt")));
+            Scanner sc2 = new Scanner((new File(userFilePath+ "\\posting" + olderPostingIndex + ".txt")));
+            File newPostFile;
+            if (Parse.stopIndexer && !Parse.currChunk.isEmpty())
+                newPostFile = new File(FILE_PATH);
+            else //still has more things to do.
+                newPostFile = new File(userFilePath+"\\posting" + currPostingFileIndex + ".txt");
             PrintWriter out = new PrintWriter(new FileWriter(newPostFile, true));
             line1 = sc1.nextLine();
             line2 = sc2.nextLine();
-            term1 = changeToUpperCase(line1.substring(0, line1.indexOf("|"))); // only term itself, with no other data.
-            term2 = changeToUpperCase(line2.substring(0, line2.indexOf("|"))); // only term itself, with no other data.
+            term1 =line1.substring(0, line1.indexOf("|")); // only term itself, with no other data.
+            term2 = line2.substring(0, line2.indexOf("|")); // only term itself, with no other data.
 
             while (sc1.hasNextLine() && sc2.hasNextLine()) {
-                if (term1.compareTo(term2) < 0) { //term1 is first in dic.
+                int compare = compareTwoString(term1,term2);
+                if (compare < 0) { //term1 is first in dic.
                     out.append(line1+ "\n");
                     line1 = sc1.nextLine();
-                    term1 =changeToUpperCase( line1.substring(0, line1.indexOf("|"))); // only term itself, with no other data.
+                    term1 =line1.substring(0, line1.indexOf("|")); // only term itself, with no other data.
 
-                } else if (term1.compareTo(term2) > 0) {
+                } else if (compare > 0) {
                     out.append(line2+"\n");
                     line2 = sc2.nextLine();
                     term2 = line2.substring(0, line2.indexOf("|")); // only term itself, with no other data.
 
                 }
-                else { //same term ! // adds both list of docs and data.
-                    out.append(term1 + line1.substring(line1.indexOf("|")) + line2.substring(line2.indexOf("|")) + "\n");
+                else { //same term ! // adds both list of docs and data. compare == 0
+
+                    int compareNotUpperCase = term1.compareTo(term2);
+                    if(term1.matches(".*\\d.*") || compareNotUpperCase == 0 || compareNotUpperCase < 0) { ///same word && term1 lowerCase and term2 upperCase
+                        out.append(term1 + line1.substring(line1.indexOf("|")) + line2.substring(line2.indexOf("|")) + "\n");
+                        if(compareNotUpperCase < 0){
+                            termDic.put(term1 ,termDic.remove(term2));
+                        }
+                    }else{ //term2 lowerCase and term1 upperCase
+                        out.append(term2 + line1.substring(line1.indexOf("|")) + line2.substring(line2.indexOf("|")) + "\n");
+                    }
+
                     line1 = sc1.nextLine();
                     line2 = sc2.nextLine();
-                    term1 = changeToUpperCase( line1.substring(0, line1.indexOf("|"))); // only term itself, with no other data.
-                    term2 =line2.substring(0, line2.indexOf("|")); // only term itself, with no other data.
+                    term1 =  line1.substring(0, line1.indexOf("|")); // only term itself, with no other data.
+                    term2 = line2.substring(0, line2.indexOf("|")); // only term itself, with no other data.
+
                 }
             }
             while (sc1.hasNextLine()) { //adds only terms from 1.
@@ -289,6 +305,14 @@ public class Indexer extends Thread {
         }
     }
 
+    private int compareTwoString(String s1 , String s2){
+
+        int result = s1.compareToIgnoreCase(s2);
+        if( result == 0 )
+            result = s1.compareTo(s2);
+        return result;
+    }
+
     private TreeMap<String , int[]> newTree(){
 
         return new TreeMap<>(new Comparator<String>(){
@@ -306,8 +330,10 @@ public class Indexer extends Thread {
     public void start (){ indexAll();}
 
 
-    public static void restart(){
-        Queue<Document> currChunk = new LinkedList<>();
+    public static void reset(){
+        Parse.currChunk = new LinkedBlockingQueue<>();
+        termDic = new HashMap<>();
+        allDocuments = new HashMap<>();
     }
 
 

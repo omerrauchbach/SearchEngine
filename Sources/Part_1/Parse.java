@@ -14,7 +14,8 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 public class Parse extends Thread {
 
-    public static BlockingQueue<Document> documentsSet = new LinkedBlockingQueue<>(3000);
+
+    public static BlockingQueue<Document> currChunk = new LinkedBlockingQueue<>(2000);
     private Set<String> stopWords = new HashSet<>();
     public  String[] allTokens ;
     private int index ;
@@ -29,10 +30,11 @@ public class Parse extends Thread {
     private String termLocationsInDoc = "";
     private String currTokenStartEnd;
     public static boolean stopIndexer = false;
+    private ReadFile rd;
 
 
-    public Parse(boolean stemmer , String stopWordPath){
-
+    public Parse(boolean stemmer , String stopWordPath , ReadFile rd){
+        this.rd = rd ;
         this.iSstemmer = stemmer;
         df.setRoundingMode(RoundingMode.CEILING);
         setStopWord(stopWordPath);
@@ -41,18 +43,16 @@ public class Parse extends Thread {
     private void parseDocs() {
         String currToken = "";
 
-        while (!ReadFile.stopParser || (ReadFile.stopParser && !documentsSet.isEmpty())) {
-
-
-            if(!documentsSet.isEmpty() && (documentsSet.size()>= 3000 || ReadFile.stopParser)) {
-                Queue<Document> queueOfDoc =new LinkedList<>();
-                documentsSet.drainTo(queueOfDoc,3000);
-                while (!queueOfDoc.isEmpty()) {
-                    newDoc = queueOfDoc.poll();
+        while (!ReadFile.stopParser || (ReadFile.stopParser && !rd.documentsSet.isEmpty())) {
+                rd.getChunckOfDoc();
+                //Queue<Document> queueOfDoc = rd.documentsSet.
+                //eadFile.documentsSet.drainTo(queueOfDoc,3000);
+                while (!rd.documentsSet.isEmpty()) {
+                    newDoc = rd.documentsSet.poll();
                     docName = newDoc.getId();
                     System.out.println(docName + ": Parse");
-
                     allTokens = newDoc.getText().split("(?!,[0-9])[\",\\/?&=@!\\[\\]:;|*#'+)_(\\s]+");
+                    newDoc.clear();
 
                     index = 0;
 
@@ -98,22 +98,26 @@ public class Parse extends Thread {
                         e.printStackTrace();
                         // System.out.println (currToken);
                     }
-                    newDoc.clear();
+
 
                     try {
 
-                        Indexer.currChunk.put(newDoc);
+                        synchronized(this){
+                            if(currChunk.remainingCapacity() == 0)
+                                while(!currChunk.isEmpty())
+                                    wait(50);
+                        }
 
-                    }
-                    catch (IllegalStateException e ){
+                        currChunk.put(newDoc);
+
+                    } catch (IllegalStateException e) {
                         e.printStackTrace();
-                    }
-                    catch (InterruptedException e){
+                    } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
                     allTokens = null;
                 }
-            }
+
         }
 
         stopIndexer = true;
@@ -380,24 +384,6 @@ public class Parse extends Thread {
         return  df.format(new BigDecimal(numToken).movePointLeft(shift));
     }
 
-    private String deleteZeroFromEnd(String num){
-
-        String ans = num;
-        if(num != null && num.contains(".")){
-            for(int i = num.length()-1 ; i >=0 ; i--){
-                if(num.charAt(i)=='.')
-                    return num.substring(0,i);
-                else if(num.charAt(i)=='0'){
-                    ans = num.substring(0,i);
-                }else{
-                    return ans;
-                }
-            }
-            return ans;
-        }else
-            return num;
-    }
-
     private boolean isNumericDate(String numToken){
         if(numToken.length()>4 || numToken.length() <2)
             return false;
@@ -414,17 +400,6 @@ public class Parse extends Thread {
         return false;
     }
 
-    private boolean isDate (String docToken){ //checks if the token is a month (date)
-
-        if(index+1 < allTokens.length){
-            if((isNumericDate(currTokenStartEnd) && isMonths(allTokens[index+1])) || (isNumericDate(allTokens[index+1]) && isMonths(docToken)))
-                return true;
-            else
-                return false;
-        }
-        else
-            return false;
-    }
 
     private boolean isNumericDayDate(String numTerm){
 
@@ -826,8 +801,7 @@ public class Parse extends Thread {
     }
 
     public static void restart(){
-        documentsSet = new LinkedBlockingQueue<>();
-        stopIndexer = false;
+
     }
 
     public void run(){
