@@ -16,14 +16,14 @@ import javafx.stage.Stage;
 
 import javax.swing.*;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public class Controller {
 
@@ -32,43 +32,83 @@ public class Controller {
     public Button start;
     public Button browse_Doc;
     public Button browse_posting;
-    public Button restart;
+    public Button reset;
     public Button displayInv;
     public Button loadInv;
     public CheckBox stemming;
-    String docPath= "" ;
-    String postingPathSaved = "" ;
+    public String docPath= "" ;
+    public String postingPathSaved = "" ;
+    public boolean alreadyIndexedWithStemming = false;
+    public boolean alreadyIndexedWithoutStemming = false;
+    private boolean startsIndexing = false;
+    public long startTime;
+    public String loadDicPath;
+    public boolean stemm = false;
 
     public void onStart(){
 
+ /*       loadInv.setVisible(false);
+        displayInv.setVisible(false);
+        browse_Doc.setVisible(false);
+        browse_posting.setVisible(false);*/
+
         docPath = documentPath.getText();
         postingPathSaved = this.postingPath.getText();
-        boolean stemming =this.stemming.isSelected();
+        stemm = this.stemming.isSelected();
+        String infoToDisplay = "";
+
         if(docPath.equals("") || postingPathSaved.equals("")){
             displayError("You have to fill the two paths");
         }else{
 
             try {
                 ReadFile rd = new ReadFile(docPath);
-                Parse parse = new Parse(stemming, docPath);
-                Indexer indexer = new Indexer(stemming ,postingPathSaved);
+                ReadFile.stopParser = false;
+                Parse parse = new Parse(stemm, docPath, rd);
+                Parse.currChunk = new LinkedBlockingQueue<>(2000);
+                Parse.stopIndexer =false;
+                Indexer indexer = new Indexer(stemm ,postingPathSaved);
+                Indexer.termDic = new HashMap<>();
+                Indexer.allDocuments = new HashMap<>();
 
-                Thread threadReadFile = new Thread(rd);
                 Thread threadParse = new Thread(parse);
+                //Thread threadReadFile = new Thread(rd);
                 Thread threadIndexer = new Thread(indexer);
 
+                startTime = System.nanoTime();
+                startsIndexing = true;
+
+                if (stemm)
+                    alreadyIndexedWithStemming = true;
+                else
+                    alreadyIndexedWithoutStemming = true;
+
                 threadParse.start();
-                threadReadFile.start();
+                //threadReadFile.start();
                 threadIndexer.start();
 
                 threadParse.join();
-                threadReadFile.join();
+                //threadReadFile.join();
                 threadIndexer.join();
             }
             catch(Exception e){
                 e.printStackTrace();
             }finally {
+ /*               loadInv.setDisable(false);
+                displayInv.setDisable(false);
+                browse_Doc.setDisable(false);
+                browse_posting.setDisable(false);*/
+                double totalTimeInSeconds = (System.nanoTime() - startTime) * Math.pow(10, -9);
+                int numOfDocs = Indexer.allDocuments.size();
+                int numOfUniqueTerms = Indexer.termDic.size();
+                infoToDisplay = "Total documents indexed: " + numOfDocs + "\nNumber of unique " +
+                        "terms in the corpus: " + numOfUniqueTerms + "\nTotal process' running time: "
+                        + totalTimeInSeconds + " seconds";
+
+                displayInfo(infoToDisplay);
+                startsIndexing =false;
                 System.out.println("Done!!!!!!!");
+
             }
         }
     }
@@ -88,34 +128,56 @@ public class Controller {
     }
 
     public void onReset(){
-        File rootFile = new File(documentPath.getText());
-        File[] Files = rootFile.listFiles();
-        for(File f : Files){
-            File[] textFiles = f.listFiles();
-            for (File textFile : textFiles)
-                textFile.delete();
-            f.delete();
-        }
-        rootFile.delete();
-        documentPath.clear();
-        postingPath.clear();
-        stemming.setSelected(false);
-        Parse.restart();
-        Indexer.restart();
 
+        postingPathSaved = this.postingPath.getText();
+        if (!startsIndexing && ((alreadyIndexedWithStemming || alreadyIndexedWithoutStemming) || !postingPathSaved.equals(""))) {
+
+            documentPath.setText("");
+            postingPath.setText("");
+            stemming.setSelected(false);
+            File dir = new File(postingPathSaved);
+            File[] dirFiles = dir.listFiles();
+            if (dirFiles != null) {
+                Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Are you sure you want to reset?", ButtonType.YES, ButtonType.NO, ButtonType.CANCEL);
+                alert.showAndWait();
+                if (alert.getResult() == ButtonType.YES){
+                    for (File fileInDir : dirFiles) {
+                        if (fileInDir != null)
+                            fileInDir.delete();
+                    }
+                    dir.delete();
+                }
+            }
+            else
+                displayError("No data to be reset!");
+
+            alreadyIndexedWithStemming = false;
+            alreadyIndexedWithoutStemming = false;
+            Parse.reset();
+            Indexer.reset();
+            documentPath.clear();
+            postingPath.clear();
+            docPath = null;
+            postingPath = new TextField();
+        }
+        else {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setContentText("No data to be reset!");
+            alert.show();
+        }
     }
 
     public void onDisplayInv(){
 
         ObservableList<Map.Entry<String, Integer>> invertedList = getObservableList();
         Stage stage = new Stage();
-        stage.setTitle("Inverted Table");
+        stage.setTitle("Dictionary");
 
-        TableColumn<Map.Entry<String, Integer>, String> tokenCol = new TableColumn<>("Token");
+        TableColumn<Map.Entry<String, Integer>, String> tokenCol = new TableColumn<>("term");
         tokenCol.setMinWidth(200);
         tokenCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getKey()));
 
-        TableColumn<Map.Entry<String, Integer> , Integer> numCol = new TableColumn<>("#");
+        TableColumn<Map.Entry<String, Integer> , Integer> numCol = new TableColumn<>("total shows");
         numCol.setMinWidth(100);
         numCol.setCellValueFactory(cellData -> new SimpleIntegerProperty(cellData.getValue().getValue()).asObject());
 
@@ -133,14 +195,91 @@ public class Controller {
 
     public void onLoadInv() throws IOException {
 
-        Path out = Paths.get(postingPathSaved+"\\LoadInv");
-        Files.write(out,getInvAsList());
+        postingPathSaved = this.postingPath.getText();
+        stemm = this.stemming.isSelected();
+        String line1 = "";
+        String term = "";
+        int[] termData = new int[2];
+        int numOfDocs = 0;
+        String[] allDocsInfo;
+        int totalShows = 0;
+
+        if (postingPathSaved.equals("")) {
+            displayError("You have to fill the posting path to load a dictionary!");
+
+        } else { //correct posting files  path.
+
+            if (new File(postingPathSaved + "\\stemming.txt").exists() && stemm)
+                loadDicPath = postingPathSaved + "\\stemming.txt";
+            else if (new File(postingPathSaved + "\\nonStemming.txt").exists() && !stemm)
+                loadDicPath = postingPathSaved + "\\nonStemming.txt";
+            else
+                displayError("No files to load from the given path!");
+
+            ///////////////////////////////////////////////////////////////// ?????????
+            try {
+                Scanner scanner = new Scanner((new File(loadDicPath)));
+
+                while (scanner.hasNextLine()) {
+
+                    line1 = scanner.nextLine();
+                    term = line1.substring(0, line1.indexOf("|")); // only term itself, with no other data.
+                    totalShows = 0;
+                    allDocsInfo = new String[line1.length()];
+                    numOfDocs = line1.split("|").length;
+                    line1 = line1.substring(line1.indexOf("|") + 1); //without term itself.
+
+                    if (!line1.contains("|")) { //only one doc in list.
+                        numOfDocs = 1;
+                        totalShows = Integer.parseInt(line1.substring(line1.indexOf(":")+1 , line1.indexOf(";")));
+                        line1 = null; //finish
+                    }
+
+                    numOfDocs = 0;
+                    while (line1 != null) {
+                        allDocsInfo = line1.split(":|\\;|\\|"); //each cell is a different doc and its values
+                        numOfDocs++;
+                        totalShows = totalShows + Integer.parseInt(allDocsInfo[1]);
+                        line1 = line1.substring(line1.indexOf("|") + 1); // next docID of term and info...
+                        if (!line1.contains("|")) {
+                            numOfDocs++;
+                            allDocsInfo = line1.split(":|\\;|\\|"); //each cell is a different doc and its values
+                            totalShows = totalShows + Integer.parseInt(allDocsInfo[1]);
+                            break;
+                        }
+                    }
+
+                    termData[0] = numOfDocs;
+                    termData[1] = totalShows;
+
+                    Indexer.termDic.put(term, termData); //adds to dic.
+                }
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            finally {
+                displayInfo("Dictionary was successfully loaded to memory.");
+
+            }
+        }
     }
 
     private ObservableList<Map.Entry<String, Integer>> getObservableList(){
 
         ObservableList<Map.Entry<String, Integer>> invertedList = FXCollections.observableArrayList();
-        for(Map.Entry<String, int[]> entry : Indexer.termDic.entrySet()){
+        TreeMap<String,int[]> sortedList = new TreeMap<>(new Comparator<String>(){
+
+            @Override
+            public int compare(String s1, String s2) {
+                int result = s1.compareToIgnoreCase(s2);
+                if( result == 0 )
+                    result = s1.compareTo(s2);
+                return result;
+            }
+        });
+        sortedList.putAll(Indexer.termDic);
+        for(Map.Entry<String, int[]> entry : sortedList.entrySet()){
             Map.Entry<String, Integer> newEntry = new Map.Entry<String, Integer>() {
                 @Override
                 public String getKey() {
@@ -165,15 +304,39 @@ public class Controller {
     private List<String> getInvAsList(){
 
         List<String> InvList = new ArrayList<>();
-        for(Map.Entry<String, int[]> entry : Indexer.termDic.entrySet())
-            InvList.add(entry.getKey()+","+entry.getValue()[0]+","+entry.getValue()[1]+","+entry.getValue()[2]);
+        TreeMap<String,int[]> sortedList = new TreeMap<>(new Comparator<String>(){
+
+            @Override
+            public int compare(String s1, String s2) {
+                int result = s1.compareToIgnoreCase(s2);
+                if( result == 0 )
+                    result = s1.compareTo(s2);
+                return result;
+            }
+        });
+        sortedList.putAll(Indexer.termDic);
+        for(Map.Entry<String, int[]> entry: sortedList.entrySet()) {
+            int[] value = entry.getValue();
+            InvList.add(entry.getKey() + "," + value[0] + "," + value[1]) ;
+        }
 
         return InvList;
     }
+
 
     private void displayError(String error){
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setContentText(error);
         alert.show();
+    }
+
+    private void displayInfo(String info){
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setContentText(info);
+        alert.show();
+    }
+
+    private boolean alreadyIndexedAll() {
+        return alreadyIndexedWithStemming && alreadyIndexedWithoutStemming;
     }
 }

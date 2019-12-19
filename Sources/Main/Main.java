@@ -16,6 +16,8 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.util.*;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 
 public class Main extends Application {
@@ -28,6 +30,9 @@ public class Main extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
+
+
+
 
         Parent mainWindow = FXMLLoader.load(getClass().getResource("/Main.fxml"));
         primaryStage.setScene(new Scene(mainWindow , 600, 400));
