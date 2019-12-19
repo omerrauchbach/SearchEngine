@@ -7,6 +7,11 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.Queue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * This class reads all the files in the directory's path
@@ -17,6 +22,9 @@ public class ReadFile extends Thread {
     private String pathDir;
     private StringBuilder allLinesInDoc;
     public static boolean stopParser = false;
+    private HashSet<String> visitedFiles = new HashSet<>();
+    public Queue<Document> documentsSet = new LinkedList<>();
+    private int counterDoneFile = 0;
 
 
 
@@ -33,7 +41,7 @@ public class ReadFile extends Thread {
     // reads all the files inside the corpus directory
     public void readInsideAllFiles() {
 
-        File rootDirectory = new File(pathDir + "\\tests");
+        File rootDirectory = new File(pathDir + "\\corpus_1");
         File[] allDirectories = rootDirectory.listFiles();
         System.out.println("ReadFile");
         if (allDirectories != null) {
@@ -125,7 +133,7 @@ public class ReadFile extends Thread {
             }
             try {// adds the specific document
 
-                Parse.documentsSet.put(newDoc);
+                documentsSet.add(newDoc);
                 System.out.println(newDoc.getId() + ":ReadFile");
             }
             catch(IllegalStateException e){
@@ -135,9 +143,7 @@ public class ReadFile extends Thread {
             catch (IllegalMonitorStateException e) {
                 e.printStackTrace();
             }
-            catch (InterruptedException e){
-                e.printStackTrace();
-            }
+
 
             startInd = allLinesInDoc.indexOf("<DOC>", endInd); //continues to the next doc in file
         }
@@ -145,6 +151,62 @@ public class ReadFile extends Thread {
 
     }
 
+
+
+    public  void getChunckOfDoc(){
+        readInsideAllFilesTest();
+    }
+
+    public void readInsideAllFilesTest() {
+
+        int counter = 0;
+        int currNumFile = 0;
+        File rootDirectory = new File(pathDir + "\\corpus_1");
+        File[] allDirectories = rootDirectory.listFiles();
+        System.out.println("ReadFile");
+        if (allDirectories != null) {
+            allLinesInDoc = new StringBuilder();
+            for (File file : allDirectories) {
+                File[] current = file.listFiles(); // gets the file itself, inside the corpus directory
+                if (null == current || currNumFile<counterDoneFile) {
+                    currNumFile++;
+                    continue;
+                }
+                if(counter <10) {
+                    for (File txtfile : current) {
+                        try {
+                            BufferedReader myBufferedReader = new BufferedReader(new InputStreamReader(new FileInputStream(txtfile)));
+                            for (String currLine; (currLine = myBufferedReader.readLine()) != null; )
+                                allLinesInDoc.append(currLine + System.lineSeparator());
+                            createDoc();
+                            allLinesInDoc = new StringBuilder();
+                            myBufferedReader.close();
+
+
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+
+                    }
+                    counter++;
+                    currNumFile++;
+                }
+                else{
+                    counterDoneFile = counterDoneFile+ 10;
+                    return;
+                }
+
+            }
+
+        }
+        else{
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setContentText("Error in folder path");
+            alert.show();
+        }
+
+        stopParser = true;
+    }
 
     public void run(){
         readInsideAllFiles();
