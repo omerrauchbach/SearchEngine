@@ -800,7 +800,7 @@ public class Parse extends Thread {
         }
     }
 
-    public static void restart(){
+    public static void reset(){
 
     }
 
